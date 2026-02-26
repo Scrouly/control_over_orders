@@ -119,7 +119,20 @@
     font-family: var(--font-b);
 }
 .num-auto-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
-.num-auto-btn.loading { opacity: .6; pointer-events: none; }
+.num-auto-btn.loading { pointer-events: none; background: var(--dark); color: #fff; border-color: var(--dark); }
+
+.spinner-sm {
+    display: none;
+    width: 12px; height: 12px;
+    border: 2px solid rgba(255,255,255,.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin .8s linear infinite;
+    margin-right: 5px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading .spinner-sm { display: inline-block; }
+.loading .btn-icon-text { display: none; }
 
 /* ══ ИСПОЛНИТЕЛИ ══ */
 .exec-search-field { position: relative; margin-bottom: 10px; }
@@ -253,7 +266,8 @@
                         <div class="num-wrap">
                             {{ form.document_number }}
                             <button type="button" class="num-auto-btn" id="num-auto-btn" onclick="autoNumber()" title="Подобрать следующий номер">
-                                ✨ Авто
+                                <span class="spinner-sm"></span>
+                                <span class="btn-icon-text">✨</span> Авто
                             </button>
                         </div>
                         <div style="font-size:10px;color:#aaa;margin-top:4px;" id="num-hint"></div>
