@@ -557,6 +557,27 @@
         .text-serif { font-family: var(--font-h); }
         .fw-bold { font-weight: 700; }
 
+        /* Telegram Status Indicators */
+        .t-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            cursor: help;
+            border-radius: 50%;
+            transition: transform 0.1s;
+        }
+        .t-status:hover { transform: scale(1.1); }
+        .t-status--pending { color: #999; animation: t-spin 2s linear infinite; }
+        .t-status--sent { color: #2ecc71; }
+        .t-status--ack { color: #3498db; }
+        .t-status--fail { color: #e74c3c; }
+        .t-status--none { color: #bdc3c7; opacity: 0.6; }
+
+        @keyframes t-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* ════════════════════════════════════════
            МОБИЛЬНЫЙ САЙДБАР (overlay)
         ════════════════════════════════════════ */
