@@ -53,6 +53,12 @@
         a { color: inherit; text-decoration: none; }
         button { font-family: var(--font-b); }
 
+        /* Фокусные состояния для доступности */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
+        }
+
         /* ════════════════════════════════════════
            LAYOUT
         ════════════════════════════════════════ */
@@ -184,10 +190,11 @@
         .nav-submenu {
             overflow: hidden;
             max-height: 0;
-            transition: max-height 0.25s ease;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(0,0,0,0.1);
         }
         .nav-section--open .nav-submenu {
-            max-height: 300px;
+            max-height: 200px; /* Более реалистичное значение для 3-4 пунктов */
         }
         .nav-submenu .nav-item {
             padding-left: 50px;
@@ -203,6 +210,10 @@
             cursor: pointer;
             transition: background 0.15s, color 0.15s;
             border-left: 2px solid transparent;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
         }
         .nav-parent:hover { background: rgba(255,255,255,0.05); color: var(--text); }
         .nav-parent__icon { font-size: 15px; width: 20px; text-align: center; }
@@ -652,12 +663,17 @@
 
             {# Справочники — с подменю #}
             <div class="nav-section {% active_section '/references/' %}" id="nav-references">
-                <div class="nav-parent" onclick="toggleSection('nav-references')">
+                <button type="button"
+                        class="nav-parent"
+                        onclick="toggleSection('nav-references')"
+                        aria-expanded="false"
+                        aria-controls="nav-references-submenu"
+                        title="Справочники">
                     <span class="nav-parent__icon">📚</span>
                     Справочники
                     <span class="nav-parent__arrow">▾</span>
-                </div>
-                <div class="nav-submenu">
+                </button>
+                <div class="nav-submenu" id="nav-references-submenu" role="region" aria-label="Подменю справочников">
                     <a href="{% url 'references:departments' %}" class="nav-item {% nav_active 'references:departments' %}">Подразделения</a>
                     <a href="{% url 'references:positions' %}" class="nav-item {% nav_active 'references:positions' %}">Должности</a>
                     <a href="{% url 'references:types' %}" class="nav-item {% nav_active 'references:types' %}">Виды поручений</a>
@@ -703,7 +719,7 @@
                     <div class="user-block__name">{{ user.get_full_name|default:user.username }}</div>
                     <div class="user-block__role">{{ user|user_role }}</div>
                 </div>
-                <a href="{% url 'core:logout' %}" class="user-block__logout" title="Выйти">⎋</a>
+                <a href="{% url 'core:logout' %}" class="user-block__logout" title="Выйти" aria-label="Выйти">⎋</a>
             </div>
         </div>
 
@@ -716,7 +732,7 @@
 
         <!-- Топбар -->
         <div class="topbar">
-            <button class="menu-toggle" onclick="openSidebar()">☰</button>
+            <button class="menu-toggle" onclick="openSidebar()" title="Открыть меню" aria-label="Открыть меню">☰</button>
 
             <div class="topbar__breadcrumb">
                 <a href="{% url 'core:dashboard' %}">Главная</a>
@@ -754,12 +770,18 @@
     }
     function toggleSection(id) {
         const el = document.getElementById(id);
-        el.classList.toggle('nav-section--open');
+        const btn = el.querySelector('.nav-parent');
+        const isOpen = el.classList.toggle('nav-section--open');
+        if (btn) {
+            btn.setAttribute('aria-expanded', isOpen);
+        }
     }
     // Открываем подменю автоматически если активен
     document.querySelectorAll('.nav-section').forEach(section => {
         if (section.querySelector('.nav-item--active')) {
             section.classList.add('nav-section--open');
+            const btn = section.querySelector('.nav-parent');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
         }
     });
 </script>
