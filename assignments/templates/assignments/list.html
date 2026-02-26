@@ -410,7 +410,6 @@
                     {% if current_sort == 'executor' %}▲{% elif current_sort == '-executor' %}▼{% else %}⇅{% endif %}
                 </span>
             </th>
-            <th style="width:40px; text-align:center;" title="Статус уведомления в Telegram">ТГ</th>
             <th class="s" onclick="sortBy('deadline')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ') sortBy('deadline')" aria-label="Сортировать по сроку">
                 Срок <span class="sort-ic {% if current_sort == 'deadline' %}up{% elif current_sort == '-deadline' %}dn{% endif %}">
                     {% if current_sort == 'deadline' %}▲{% elif current_sort == '-deadline' %}▼{% else %}⇅{% endif %}
@@ -444,20 +443,6 @@
                     {{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}.{{ task.executor.middle_name|slice:":1" }}.
                 </div>
                 <div class="pdept">{{ task.executor.department.name|default:"—" }}</div>
-            </td>
-
-            <td style="text-align:center;">
-                {% if forloop.counter == 1 %}
-                    <span class="t-status t-status--pending" title="Ожидает: задание создано, ожидает отправки" aria-label="Ожидает отправки">🕒</span>
-                {% elif forloop.counter == 2 %}
-                    <span class="t-status t-status--sent" title="Отправлено: сообщение успешно доставлено в 14:30" aria-label="Отправлено">✅</span>
-                {% elif forloop.counter == 3 %}
-                    <span class="t-status t-status--ack" title="Принято: исполнитель подтвердил получение задания" aria-label="Принято">✔️✔️</span>
-                {% elif forloop.counter == 4 %}
-                    <span class="t-status t-status--fail" title="Ошибка: пользователь заблокировал бота или ошибка сети" aria-label="Ошибка">⚠️</span>
-                {% else %}
-                    <span class="t-status t-status--none" title="Нет Telegram: сотрудник не привязал аккаунт Telegram" aria-label="Нет Telegram">👤</span>
-                {% endif %}
             </td>
 
             <td>
