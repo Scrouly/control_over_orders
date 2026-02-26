@@ -145,8 +145,9 @@
     font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
     white-space:nowrap; user-select:none;
 }
-.at th.s { cursor:pointer; }
+.at th.s { cursor:pointer; outline:none; }
 .at th.s:hover { background:rgba(255,255,255,.08); }
+.at th.s:focus-visible { background:rgba(255,255,255,.15); box-shadow:inset 0 0 0 2px var(--accent); }
 .sort-ic { opacity:.35; margin-left:3px; font-size:10px; }
 .sort-ic.up { opacity:1; }
 .sort-ic.dn { opacity:1; }
@@ -217,10 +218,11 @@
                 <div class="search-wrap">
                     <span class="search-wrap__icon">🔍</span>
                     <input type="text" name="q" id="search-input" class="search-input"
-                           placeholder="Номер, текст, исполнитель…" value="{{ f_q }}">
+                           placeholder="Номер, текст, исполнитель…" value="{{ f_q }}"
+                           aria-label="Поиск поручений">
                 </div>
                 {% if has_filters %}
-                <a href="{% url 'assignments:list' %}" class="btn btn--ghost btn--sm">✕ Сбросить</a>
+                <a href="{% url 'assignments:list' %}" class="btn btn--ghost btn--sm" title="Сбросить все фильтры" aria-label="Сбросить фильтры">✕ Сбросить</a>
                 {% endif %}
             </div>
         </div>
@@ -317,13 +319,13 @@
                 <div class="fg">
                     <span class="qd-label">Быстрый выбор срока</span>
                     <div class="quick-dates">
-                        <button type="button" class="qbtn" onclick="setDateTo(0)">Сегодня</button>
-                        <button type="button" class="qbtn" onclick="setDateTo(3)">+3 дня</button>
-                        <button type="button" class="qbtn" onclick="setDateTo(7)">+7 дней</button>
-                        <button type="button" class="qbtn" onclick="setDateTo(14)">+2 недели</button>
-                        <button type="button" class="qbtn" onclick="setEndMonth()">Конец месяца</button>
-                        <button type="button" class="qbtn" onclick="setEndNextMonth()">След. месяц</button>
-                        <button type="button" class="qbtn" onclick="clearDates()" style="color:#e53935;border-color:#fde8e8;">✕ Даты</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(0)" title="Выбрать сегодня">Сегодня</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(3)" title="Выбрать через 3 дня">+3 дня</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(7)" title="Выбрать через 7 дней">+7 дней</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(14)" title="Выбрать через 14 дней">+2 недели</button>
+                        <button type="button" class="qbtn" onclick="setEndMonth()" title="Выбрать до конца текущего месяца">Конец месяца</button>
+                        <button type="button" class="qbtn" onclick="setEndNextMonth()" title="Выбрать до конца следующего месяца">След. месяц</button>
+                        <button type="button" class="qbtn" onclick="clearDates()" style="color:#e53935;border-color:#fde8e8;" title="Очистить фильтр по датам" aria-label="Очистить даты">✕ Даты</button>
                     </div>
                 </div>
 
@@ -384,7 +386,7 @@
             <button type="button" class="bbtn" onclick="bulkAction('notify_deadline')">📅 Изменение сроков</button>
             <div class="bulk-sep"></div>
             <button type="button" class="bbtn" onclick="bulkAction('print')">🖨️ Печать</button>
-            <button type="button" class="bbtn--x" onclick="deselectAll()">✕</button>
+            <button type="button" class="bbtn--x" onclick="deselectAll()" title="Снять выделение" aria-label="Отменить выделение">✕</button>
         </div>
     </div>
 
@@ -396,26 +398,26 @@
 <table class="at" id="at">
     <thead>
         <tr>
-            <th class="col-cb"><input type="checkbox" id="check-all"></th>
-            <th class="s" onclick="sortBy('document_number')">
+            <th class="col-cb"><input type="checkbox" id="check-all" aria-label="Выбрать все"></th>
+            <th class="s" onclick="sortBy('document_number')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ') sortBy('document_number')" aria-label="Сортировать по документу">
                 Документ <span class="sort-ic {% if current_sort == 'document_number' %}up{% elif current_sort == '-document_number' %}dn{% endif %}">
                     {% if current_sort == 'document_number' %}▲{% elif current_sort == '-document_number' %}▼{% else %}⇅{% endif %}
                 </span>
             </th>
             <th>Текст поручения</th>
-            <th class="s" onclick="sortBy('executor')">
+            <th class="s" onclick="sortBy('executor')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ') sortBy('executor')" aria-label="Сортировать по исполнителю">
                 Исполнитель <span class="sort-ic {% if current_sort == 'executor' %}up{% elif current_sort == '-executor' %}dn{% endif %}">
                     {% if current_sort == 'executor' %}▲{% elif current_sort == '-executor' %}▼{% else %}⇅{% endif %}
                 </span>
             </th>
-            <th class="s" onclick="sortBy('deadline')">
+            <th class="s" onclick="sortBy('deadline')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ') sortBy('deadline')" aria-label="Сортировать по сроку">
                 Срок <span class="sort-ic {% if current_sort == 'deadline' %}up{% elif current_sort == '-deadline' %}dn{% endif %}">
                     {% if current_sort == 'deadline' %}▲{% elif current_sort == '-deadline' %}▼{% else %}⇅{% endif %}
                 </span>
             </th>
             <th>Контролёр</th>
             <th>Визирующий</th>
-            <th class="s" onclick="sortBy('status')">
+            <th class="s" onclick="sortBy('status')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' ') sortBy('status')" aria-label="Сортировать по статусу">
                 Статус <span class="sort-ic">{% if current_sort == 'status' %}▲{% elif current_sort == '-status' %}▼{% else %}⇅{% endif %}</span>
             </th>
             <th style="width:80px;"></th>
@@ -424,7 +426,7 @@
     <tbody>
         {% for task in assignments %}
         <tr data-id="{{ task.id }}">
-            <td class="col-cb"><input type="checkbox" class="row-check" value="{{ task.id }}"></td>
+            <td class="col-cb"><input type="checkbox" class="row-check" value="{{ task.id }}" aria-label="Выбрать поручение"></td>
 
             <td>
                 <div class="doc-type">{{ task.assignment_type.name }}</div>
@@ -471,8 +473,8 @@
 
             <td>
                 <div class="row-acts">
-                    <button class="rbtn" onclick="editTask({{ task.id }})">✏️</button>
-                    <button class="rbtn" onclick="printTask({{ task.id }})">🖨️</button>
+                    <button type="button" class="rbtn" onclick="editTask({{ task.id }})" title="Редактировать поручение" aria-label="Редактировать">✏️</button>
+                    <button type="button" class="rbtn" onclick="printTask({{ task.id }})" title="Печать талона" aria-label="Печать">🖨️</button>
                 </div>
             </td>
         </tr>
