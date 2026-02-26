@@ -1,0 +1,370 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}Должности{% endblock %}
+{% block breadcrumb %}
+<span class="sep">›</span><span class="current">Справочники</span>
+{% endblock %}
+
+{% block extra_css %}
+.content { background: #f5f5f3; }
+
+/* ── Вкладки ── */
+.tabs { display:flex; background:#fff; border-bottom:2px solid #eee; margin:-24px -24px 24px; padding:0 24px; }
+.tab  { padding:15px 20px; font-size:13px; font-weight:700; color:#bbb; text-decoration:none;
+        border-bottom:2px solid transparent; margin-bottom:-2px; display:flex; align-items:center; gap:7px;
+        transition:color .13s, border-color .13s; white-space:nowrap; font-family:var(--font-b); }
+.tab:hover { color:#555; }
+.tab.on { color:#111; border-bottom-color:#111; }
+.tab-n { font-size:10px; font-weight:700; padding:0 6px; height:18px; line-height:18px;
+         border-radius:9px; background:#111; color:#fff; }
+.tab:not(.on) .tab-n { background:#e8e8e4; color:#777; }
+
+/* ── Поиск ── */
+.search-row { position:relative; margin-bottom:12px; }
+.search-row input {
+    width:100%; padding:10px 16px 10px 40px;
+    border:1px solid #e8e8e4; background:#fff;
+    font-family:var(--font-b); font-size:13.5px; color:#111;
+    outline:none; box-sizing:border-box;
+    transition:border-color .15s, box-shadow .15s;
+}
+.search-row input:focus { border-color:#4f8ef7; box-shadow:0 0 0 3px rgba(79,142,247,.1); }
+.search-row input::placeholder { color:#ccc; }
+.search-row__icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#ccc; font-size:15px; pointer-events:none; }
+.search-row__hint { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:11px; color:#ddd; pointer-events:none; }
+
+/* ── Добавление ── */
+.add-row {
+    background:#fff; border:1px solid #e8e8e4;
+    display:flex; align-items:center; gap:0;
+    margin-bottom:4px;
+    overflow:hidden;
+}
+.add-row__lbl { padding:0 14px; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:#ccc; flex-shrink:0; white-space:nowrap; }
+.add-row__sep { width:1px; height:20px; background:#eee; flex-shrink:0; }
+.add-row__inp { flex:1; padding:11px 14px; border:none; outline:none; font-family:var(--font-b); font-size:13.5px; color:#111; background:transparent; }
+.add-row__inp::placeholder { color:#ccc; }
+.add-row__btn { padding:0 18px; height:44px; background:var(--dark); color:#fff; border:none; font-family:var(--font-b); font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0; transition:opacity .12s; white-space:nowrap; }
+.add-row__btn:hover { opacity:.85; }
+
+/* ── Таблица ── */
+.ref-list { background:#fff; border:1px solid #e8e8e4; margin-top:4px; }
+
+.ref-list__header {
+    display:grid;
+    grid-template-columns: 1fr 130px 120px;
+    padding:8px 16px;
+    background:#fafaf8;
+    border-bottom:2px solid #f0f0ee;
+}
+.ref-list__hcell { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#ccc; }
+.ref-list__hcell.c { text-align:center; }
+
+.ref-row {
+    display:grid;
+    grid-template-columns: 1fr 130px 120px;
+    border-bottom:1px solid #f6f6f4;
+    min-height:52px;
+    align-items:center;
+    transition:background .1s;
+    position:relative;
+}
+.ref-row:last-child { border-bottom:none; }
+.ref-row:hover { background:#fafaf8; }
+.ref-row.is-editing { background:#f0f4ff; z-index:1; }
+
+/* Название */
+.cell-name { padding:0 16px; overflow:hidden; }
+.name-display {
+    font-size:13.5px; font-weight:700; color:#111;
+    cursor:pointer;
+    padding:3px 6px; margin:-3px -6px;
+    display:inline-block;
+    border:1px solid transparent;
+    border-radius:2px;
+    max-width:100%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    transition:border-color .12s, background .12s;
+}
+.name-display:hover { border-color:#e0e0dc; background:#fff; }
+.name-input {
+    display:none; width:100%;
+    padding:6px 8px;
+    border:1.5px solid #4f8ef7; outline:none;
+    font-family:var(--font-h); font-size:13.5px; font-weight:700; color:#111;
+    background:#fff;
+    box-shadow:0 0 0 3px rgba(79,142,247,.12);
+    box-sizing:border-box;
+}
+
+/* Статы — кликабельные */
+.cell-stat { display:flex; justify-content:center; }
+.stat-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:6px 14px;
+    border:1px solid #eee; background:#fafaf8;
+    text-decoration:none; color:inherit;
+    transition:background .12s, border-color .12s, color .12s;
+    cursor:pointer; white-space:nowrap;
+}
+.stat-pill:hover { background:#eef3ff; border-color:#c5d8ff; color:#1a56db; }
+.stat-pill__n { font-family:var(--font-h); font-size:16px; font-weight:700; color:#111; line-height:1; }
+.stat-pill--zero { opacity:.4; pointer-events:none; }
+.stat-pill--zero .stat-pill__n { color:#bbb; }
+.stat-pill__lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#aaa; }
+.stat-pill:hover .stat-pill__n { color:#1a56db; }
+.stat-pill:hover .stat-pill__lbl { color:#4f8ef7; }
+
+/* Действия */
+.cell-actions { padding:0 12px; display:flex; gap:6px; justify-content:flex-end; align-items:center; }
+.act { padding:5px 10px; font-family:var(--font-b); font-size:11px; font-weight:700; border:1px solid #e8e8e4; background:#fff; color:#777; cursor:pointer; transition:all .12s; white-space:nowrap; text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
+.act:hover { background:var(--dark); color:#fff; border-color:var(--dark); }
+.act-save { background:#4f8ef7; border-color:#4f8ef7; color:#fff; display:none; }
+.act-save:hover { background:#2563eb; border-color:#2563eb; }
+.act-cancel { display:none; }
+.act-del:hover { background:#c0392b; border-color:#c0392b; }
+
+/* Пустое состояние */
+.empty { padding:48px; text-align:center; color:#ccc; font-size:13px; }
+
+/* Нет результатов поиска */
+.no-results { display:none; padding:32px; text-align:center; color:#ccc; font-size:13px; }
+.no-results.vis { display:block; }
+
+/* Toast */
+.toast { position:fixed; bottom:24px; right:24px; padding:11px 18px; font-weight:700; font-size:12.5px; font-family:var(--font-b); color:#fff; background:#111; box-shadow:0 4px 16px rgba(0,0,0,.2); z-index:9999; opacity:0; transform:translateY(12px); transition:opacity .2s, transform .2s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast--ok    { background:#2e7d32; }
+.toast--error { background:#c0392b; }
+
+/* Модалка */
+.modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:600; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .18s; }
+.modal-bg.open { opacity:1; pointer-events:all; }
+.modal { background:#fff; padding:28px; width:360px; max-width:90%; box-shadow:0 16px 48px rgba(0,0,0,.2); transform:translateY(8px) scale(.97); transition:transform .2s; }
+.modal-bg.open .modal { transform:none; }
+.modal h3 { font-family:var(--font-h); font-size:18px; font-weight:700; margin:0 0 10px; }
+.modal p  { font-size:13px; color:#666; margin:0 0 22px; line-height:1.6; }
+.modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+.btn-del-confirm { padding:8px 20px; background:#c0392b; color:#fff; border:none; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-b); }
+{% endblock %}
+
+{% block topbar_actions %}{% endblock %}
+
+{% block content %}
+<nav class="tabs">
+    <a href="{% url 'references:departments' %}" class="tab">Подразделения</a>
+    <a href="{% url 'references:positions' %}" class="tab on">Должности <span class="tab-n">{{ positions.count }}</span></a>
+    <a href="{% url 'references:types' %}" class="tab">Виды поручений</a>
+</nav>
+
+<div class="page-header" style="margin-bottom:16px;">
+    <h1 class="page-title">Должности</h1>
+    <div class="page-subtitle">Кликните на название для переименования. Цифра ведёт к поручениям.</div>
+</div>
+
+<!-- Поиск -->
+<div class="search-row">
+    <span class="search-row__icon">⌕</span>
+    <input id="q" type="text" placeholder="Поиск подразделения…"
+           oninput="filterRows(this.value)"
+           onkeydown="if(event.key==='Escape'){this.value='';filterRows('');}">
+    <span class="search-row__hint">/ для фокуса · Esc сброс</span>
+</div>
+
+{% if is_admin %}
+<form method="post" id="add-form">
+    {% csrf_token %}
+    <div class="add-row">
+        <span class="add-row__lbl">+ Новое</span>
+        <div class="add-row__sep"></div>
+        <input name="name" class="add-row__inp" id="add-inp" placeholder="Название должности…" autocomplete="off" required>
+        <button type="submit" class="add-row__btn">Добавить</button>
+    </div>
+</form>
+{% endif %}
+
+<div class="ref-list" id="ref-list">
+    <div class="ref-list__header">
+        <div class="ref-list__hcell">Название</div>
+        <div class="ref-list__hcell c">Сотрудников</div>
+        <div class="ref-list__hcell"></div>
+    </div>
+
+    {% for pos in positions %}
+    <div class="ref-row" id="row-{{ pos.id }}" data-name="{{ pos.name|lower }}">
+
+        <div class="cell-name">
+            <span class="name-display" id="nd-{{ pos.id }}"
+                  {% if is_admin %}onclick="startEdit({{ pos.id }})" title="Нажмите для переименования"{% endif %}>
+                {{ pos.name }}
+            </span>
+            <input class="name-input" id="ni-{{ pos.id }}" value="{{ pos.name }}"
+                   onkeydown="onKey(event,{{ pos.id }})">
+        </div>
+
+        <div class="cell-stat">
+            {% if pos.employee_count %}
+            <a class="stat-pill"
+               href="{% url 'assignments:list' %}?position={{ pos.id }}"
+               title="Поручения сотрудников с этой должностью">
+                <span class="stat-pill__n">{{ pos.employee_count }}</span>
+                <span class="stat-pill__lbl">сотр.</span>
+            </a>
+            {% else %}
+            <span class="stat-pill stat-pill--zero">
+                <span class="stat-pill__n">0</span>
+                <span class="stat-pill__lbl">сотр.</span>
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="cell-actions" id="ca-{{ pos.id }}">
+            {% if is_admin %}
+            <button class="act act-edit" id="ae-{{ pos.id }}" onclick="startEdit({{ pos.id }})">✏ Изменить</button>
+            <button class="act act-save" id="as-{{ pos.id }}" onclick="saveEdit({{ pos.id }})">✓ Сохранить</button>
+            <button class="act act-cancel" id="ac-{{ pos.id }}" onclick="cancelEdit({{ pos.id }})">✕</button>
+            <button class="act act-del" onclick="askDel({{ pos.id }},'{{ pos.name|escapejs }}',{{ pos.employee_count }})">🗑</button>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty">Должностей пока нет — добавьте первую</div>
+    {% endfor %}
+
+    <div class="no-results" id="no-res">Ничего не найдено</div>
+</div>
+
+<!-- Модалка -->
+<div class="modal-bg" id="modal">
+    <div class="modal">
+        <h3 id="m-ttl"></h3>
+        <p  id="m-txt"></p>
+        <div class="modal-btns">
+            <button class="act" onclick="closeModal()">Отмена</button>
+            <button class="btn-del-confirm" id="m-ok">Удалить</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+let active = null; // id редактируемой строки
+
+// Закрыть при клике вне
+document.addEventListener('click', e => {
+    if (active && !document.getElementById('row-' + active)?.contains(e.target))
+        cancelEdit(active);
+});
+
+function startEdit(id) {
+    if (active && active !== id) cancelEdit(active);
+    active = id;
+    const row = document.getElementById('row-' + id);
+    row.classList.add('is-editing');
+    document.getElementById('nd-' + id).style.display = 'none';
+    const inp = document.getElementById('ni-' + id);
+    inp.style.display = 'block'; inp.focus(); inp.select();
+    document.getElementById('ae-' + id).style.display = 'none';
+    document.getElementById('as-' + id).style.display = 'inline-flex';
+    document.getElementById('ac-' + id).style.display = 'inline-flex';
+}
+
+function cancelEdit(id) {
+    if (active === id) active = null;
+    const row = document.getElementById('row-' + id);
+    row.classList.remove('is-editing');
+    document.getElementById('ni-' + id).style.display = 'none';
+    document.getElementById('ni-' + id).value = document.getElementById('nd-' + id).textContent.trim();
+    document.getElementById('nd-' + id).style.display = '';
+    document.getElementById('ae-' + id).style.display = '';
+    document.getElementById('as-' + id).style.display = 'none';
+    document.getElementById('ac-' + id).style.display = 'none';
+}
+
+function onKey(e, id) {
+    if (e.key === 'Enter')  { e.preventDefault(); saveEdit(id); }
+    if (e.key === 'Escape') { e.preventDefault(); cancelEdit(id); }
+}
+
+async function saveEdit(id) {
+    const inp  = document.getElementById('ni-' + id);
+    const name = inp.value.trim();
+    if (!name) { showToast('Название не может быть пустым', 'error'); return; }
+    const btn = document.getElementById('as-' + id);
+    btn.textContent = '…'; btn.disabled = true;
+    try {
+        const url = '{% url "references:pos_update" 0 %}'.replace('/0/', '/' + id + '/');
+        const r   = await fetch(url, {
+            method:'POST',
+            headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+            body:JSON.stringify({name}),
+        });
+        const d = await r.json();
+        if (!r.ok) { showToast(d.error||'Ошибка', 'error'); btn.textContent='✓ Сохранить'; btn.disabled=false; return; }
+        document.getElementById('nd-' + id).textContent = d.name;
+        document.getElementById('row-' + id).dataset.name = d.name.toLowerCase();
+        cancelEdit(id);
+        showToast('Сохранено', 'ok');
+    } catch { showToast('Ошибка соединения', 'error'); btn.textContent='✓ Сохранить'; btn.disabled=false; }
+}
+
+// ── Удаление ──────────────────────────────────────
+let delId = null;
+function askDel(id, name, cnt) {
+    delId = id;
+    document.getElementById('m-ttl').textContent = 'Удалить «' + name + '»?';
+    document.getElementById('m-ok').style.display = '';
+    if (cnt > 0) {
+        document.getElementById('m-txt').innerHTML = '<b>' + cnt + ' сотрудников</b> имеют эту должность.<br>Сначала переназначьте их.';
+        document.getElementById('m-ok').style.display = 'none';
+    } else {
+        document.getElementById('m-txt').textContent = 'Должность будет удалена безвозвратно.';
+    }
+    document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); delId=null; }
+document.getElementById('modal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('m-ok').onclick = async () => {
+    if (!delId) return;
+    const url = '{% url "references:pos_delete" 0 %}'.replace('/0/', '/' + delId + '/');
+    const r   = await fetch(url, {method:'POST',headers:{'X-CSRFToken':CSRF}});
+    const d   = await r.json();
+    if (!r.ok) { showToast(d.error||'Ошибка','error'); closeModal(); return; }
+    const row = document.getElementById('row-' + delId);
+    row.style.transition='opacity .2s'; row.style.opacity='0';
+    setTimeout(()=>row.remove(), 220);
+    closeModal(); showToast('Удалено','ok');
+};
+
+// ── Поиск ──────────────────────────────────────────
+function filterRows(q) {
+    const lq = q.trim().toLowerCase();
+    let vis = 0;
+    document.querySelectorAll('.ref-row').forEach(r => {
+        const show = !lq || r.dataset.name.includes(lq);
+        r.style.display = show ? '' : 'none';
+        if (show) vis++;
+    });
+    document.getElementById('no-res').classList.toggle('vis', vis===0 && !!lq);
+}
+
+// ── Toast ───────────────────────────────────────────
+let _t;
+function showToast(msg, type='ok') {
+    const el = document.getElementById('toast');
+    el.textContent = (type==='ok'?'✓ ':'✕ ') + msg;
+    el.className = 'toast toast--'+type;
+    requestAnimationFrame(()=>el.classList.add('show'));
+    clearTimeout(_t); _t=setTimeout(()=>el.classList.remove('show'), 3000);
+}
+document.addEventListener('keydown', e => {
+    if (e.key==='/' && !e.target.closest('input,textarea')) {
+        e.preventDefault(); document.getElementById('q').focus();
+    }
+});
+</script>
+{% endblock %}

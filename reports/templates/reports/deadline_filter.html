@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поручения по сроку</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=PT+Sans:wght@400;700&display=swap');
+
+        :root {
+            --dark:   #1a1a2e;
+            --muted:  #666;
+            --border: #ddd;
+            --bg:     #f0f0ee;
+            --font-h: 'PT Serif', Georgia, serif;
+            --font-b: 'PT Sans', Arial, sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-b);
+            font-size: 14px;
+            background: var(--bg);
+            color: #111;
+            min-height: 100vh;
+        }
+
+        /* ── ШАПКА ── */
+        .topbar {
+            background: var(--dark);
+            color: #fff;
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .topbar__title {
+            font-family: var(--font-h);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .topbar__sub { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+
+        /* ── КОНТЕНТ ── */
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        /* ── ПАНЕЛЬ ФИЛЬТРОВ ── */
+        .filter-panel {
+            background: #fff;
+            border-left: 4px solid var(--dark);
+            padding: 18px 22px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        .filter-panel__title {
+            font-family: var(--font-h);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--dark);
+            margin-bottom: 14px;
+        }
+
+        /* ── СТРОКА ФИЛЬТРОВ ── */
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-end;
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label {
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: var(--muted);
+        }
+        .filter-group input[type="date"],
+        .filter-group select,
+        .filter-group input[type="text"] {
+            font-family: var(--font-b);
+            font-size: 13px;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            background: #fafafa;
+            color: #111;
+            outline: none;
+            min-width: 190px;
+            transition: border-color 0.15s;
+        }
+        .filter-group input:focus,
+        .filter-group select:focus { border-color: var(--dark); }
+
+        .btn {
+            padding: 8px 20px;
+            font-family: var(--font-b);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 0.03em;
+            transition: background 0.15s;
+        }
+        .btn--primary  { background: var(--dark); color: #fff; }
+        .btn--primary:hover { background: #000; }
+        .btn--outline  { background: #fff; color: var(--dark); border: 1.5px solid var(--dark); }
+        .btn--outline:hover { background: var(--bg); }
+        .btn--ghost    { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 400; }
+        .btn--ghost:hover  { border-color: #999; color: #333; }
+
+        /* ── БЫСТРЫЙ ВЫБОР ДАТЫ ── */
+        .quick-dates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+            align-items: center;
+        }
+        .quick-dates__label { font-size: 10px; color: var(--muted); }
+        .quick-btn {
+            font-family: var(--font-b);
+            font-size: 11px;
+            padding: 3px 10px;
+            border: 1px solid var(--border);
+            background: #fafafa;
+            cursor: pointer;
+            color: #444;
+            transition: all 0.12s;
+        }
+        .quick-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
+
+        /* ── АКТИВНЫЕ ФИЛЬТРЫ (бейджи) ── */
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+            min-height: 26px;
+            align-items: center;
+        }
+        .active-filters__label { font-size: 10px; color: var(--muted); }
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            background: var(--dark);
+            color: #fff;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .filter-badge__x { opacity: 0.7; font-size: 13px; line-height: 1; }
+        .filter-badge:hover .filter-badge__x { opacity: 1; }
+
+        /* ── ШАПКА РЕЗУЛЬТАТОВ ── */
+        .results-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .results-bar__info { font-size: 13px; color: var(--muted); }
+        .results-bar__info b { color: #111; font-size: 15px; }
+        .results-bar__actions { display: flex; gap: 8px; }
+
+        /* ── ТАБЛИЦА ── */
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            font-size: 12.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        .task-table thead tr { background: var(--dark); }
+        .task-table th {
+            text-align: left;
+            padding: 9px 10px;
+            color: #fff;
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+        .task-table th:hover { background: #2d2d4e; }
+        .task-table th .sort-icon { opacity: 0.4; margin-left: 4px; font-size: 10px; }
+        .task-table th.sorted-asc  .sort-icon::after { content: ' ▲'; opacity: 1; }
+        .task-table th.sorted-desc .sort-icon::after { content: ' ▼'; opacity: 1; }
+        .task-table th .sort-icon::after { content: ' ⇅'; }
+
+        .task-table td {
+            padding: 10px 10px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        .task-table tbody tr { transition: background 0.1s; }
+        .task-table tbody tr:hover { background: #f7f5f0; }
+        .task-table tbody tr.hidden-row { display: none; }
+        .task-table tbody tr:last-child td { border-bottom: 2px solid var(--dark); }
+
+        /* ── ЯЧЕЙКИ ── */
+        .doc-type {
+            font-size: 9px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .doc-num {
+            font-family: var(--font-h);
+            font-weight: 700;
+            font-size: 13px;
+        }
+        .person-name { font-weight: 700; font-size: 12px; }
+        .person-dept { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+        .deadline-val {
+            font-family: var(--font-h);
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .days-badge {
+            display: inline-block;
+            margin-top: 3px;
+            padding: 1px 7px;
+            font-size: 10px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .days-badge--overdue { background: #fde8e8; color: #c0392b; }
+        .days-badge--today   { background: #fef3cd; color: #856404; }
+        .days-badge--soon    { background: #fff3e0; color: #7a4f00; }
+        .days-badge--ok      { background: #e8f5e9; color: #2e7d32; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .s-NEW         { background: #e3f2fd; color: #1565c0; }
+        .s-IN_PROGRESS { background: #e8f5e9; color: #2e7d32; }
+        .s-OVERDUE     { background: #fde8e8; color: #c0392b; }
+
+        /* ── ПУСТО / ЗАГЛУШКА ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        }
+        .empty-state__icon { font-size: 36px; margin-bottom: 10px; }
+
+        /* ── НЕТ СОВПАДЕНИЙ ── */
+        .no-match-row td {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .page-footer {
+            text-align: center;
+            padding: 28px;
+            color: #bbb;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div>
+        <div class="topbar__title">ОАО «Доломит»</div>
+        <div class="topbar__sub">Система контроля исполнения поручений</div>
+    </div>
+    <div style="font-size:12px; opacity:0.7;">Поручения по сроку</div>
+</div>
+
+<div class="container">
+
+    <!-- ══ ПАНЕЛЬ ФИЛЬТРОВ ══ -->
+    <div class="filter-panel">
+        <div class="filter-panel__title">Параметры выборки</div>
+
+        <div class="filter-row">
+
+            <!-- Дата дедлайна — серверный фильтр -->
+            <form method="get" action="" id="deadline-form" style="display:contents;">
+                <div class="filter-group">
+                    <label>Срок исполнения до</label>
+                    <input type="date" name="deadline" id="deadline-input" value="{{ deadline_str }}">
+                </div>
+                <div class="filter-group" style="justify-content:flex-end;">
+                    <button type="submit" class="btn btn--primary">Загрузить</button>
+                </div>
+            </form>
+
+            {% if assignments is not None %}
+            <!-- Клиентские фильтры — показываем только когда есть данные -->
+
+            <!-- Поиск по исполнителю -->
+            <div class="filter-group">
+                <label>Исполнитель</label>
+                <input type="text" id="filter-executor" placeholder="Введите фамилию…" autocomplete="off">
+            </div>
+
+            <!-- Цех / подразделение -->
+            <div class="filter-group">
+                <label>Подразделение</label>
+                <select id="filter-dept">
+                    <option value="">— Все подразделения —</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}">{{ dept.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Статус -->
+            <div class="filter-group">
+                <label>Статус</label>
+                <select id="filter-status">
+                    <option value="">— Все статусы —</option>
+                    {% for value, label in status_choices %}
+                    {% if value != 'DONE' %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Кнопка сброса -->
+            <div class="filter-group" style="justify-content:flex-end;">
+                <button class="btn btn--ghost" onclick="resetFilters()">Сбросить</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Быстрый выбор даты -->
+        <div class="quick-dates">
+            <span class="quick-dates__label">Быстрый выбор:</span>
+            <button class="quick-btn" onclick="setDate(0)">Сегодня</button>
+            <button class="quick-btn" onclick="setDate(3)">+3 дня</button>
+            <button class="quick-btn" onclick="setDate(7)">+7 дней</button>
+            <button class="quick-btn" onclick="setEndOfMonth()">Конец месяца</button>
+            <button class="quick-btn" onclick="setEndOfNextMonth()">Конец след. месяца</button>
+        </div>
+
+        <!-- Бейджи активных фильтров -->
+        {% if assignments is not None %}
+        <div class="active-filters" id="active-filters">
+            <span class="active-filters__label" id="active-filters-label" style="display:none;">Фильтры:</span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if error %}
+    <div style="background:#fff3cd; border-left:4px solid #e0a800; padding:10px 16px; font-size:13px; margin-bottom:16px;">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- ══ РЕЗУЛЬТАТЫ ══ -->
+    {% if assignments is not None %}
+
+        {% if assignments %}
+
+        <div class="results-bar">
+            <div class="results-bar__info">
+                Поручения до <b>{{ deadline_date|date:"d.m.Y" }}</b>
+                &nbsp;·&nbsp;
+                Найдено: <b id="visible-count">{{ assignments|length }}</b>
+                <span style="color:#bbb"> / {{ assignments|length }}</span>
+            </div>
+            <div class="results-bar__actions">
+                <button class="btn btn--outline" onclick="printFiltered()">🖨️ Печать</button>
+            </div>
+        </div>
+
+        <table class="task-table" id="task-table">
+            <thead>
+                <tr>
+                    <th style="width:16%" data-col="0">Тип / Номер <span class="sort-icon"></span></th>
+                    <th style="width:38%" data-col="1">Текст поручения <span class="sort-icon"></span></th>
+                    <th style="width:12%" data-col="2">Срок <span class="sort-icon"></span></th>
+                    <th style="width:18%" data-col="3">Исполнитель <span class="sort-icon"></span></th>
+                    <th style="width:10%" data-col="4">Подразделение <span class="sort-icon"></span></th>
+                    <th style="width:6%"  data-col="5">Статус <span class="sort-icon"></span></th>
+                    <th style="width:10%" data-col="6">Визирующий <span class="sort-icon"></span></th>
+                </tr>
+            </thead>
+            <tbody id="task-tbody">
+                {% for task in assignments %}
+                <tr
+                    data-executor="{{ task.executor.last_name }} {{ task.executor.first_name }} {{ task.executor.middle_name }}"
+                    data-executor-lower="{{ task.executor.last_name|lower }} {{ task.executor.first_name|lower }}"
+                    data-dept-id="{{ task.executor.department.id|default:'' }}"
+                    data-status="{{ task.status }}"
+                    data-deadline="{{ task.deadline|date:'Y-m-d' }}"
+                >
+                    <td>
+                        <span class="doc-type">{{ task.assignment_type.name }}</span>
+                        <span class="doc-num">№ {{ task.document_number }}</span>
+                    </td>
+                    <td style="font-size:12px; line-height:1.4;">{{ task.description }}</td>
+                    <td>
+                        <div class="deadline-val">{{ task.deadline|date:"d.m.Y" }}</div>
+                        <div class="days-badge
+                            {% if task.deadline < today %}days-badge--overdue
+                            {% elif task.deadline == today %}days-badge--today
+                            {% elif task.deadline <= today %}days-badge--soon
+                            {% else %}days-badge--ok{% endif %}"
+                            data-deadline="{{ task.deadline|date:'Y-m-d' }}">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="person-name">
+                            {{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}.{{ task.executor.middle_name|slice:":1" }}.
+                        </div>
+                        <div class="person-dept">{{ task.executor.department.name|default:"—" }}</div>
+                    </td>
+                    <td style="font-size:11px; color:var(--muted);">
+                        {{ task.executor.department.name|default:"—" }}
+                    </td>
+                    <td>
+                        <span class="status-badge s-{{ task.status }}">{{ task.get_status_display }}</span>
+                    </td>
+                    <td style="font-size:11px;">
+                        {% if task.approver %}
+                            <span class="person-name" style="font-size:11px;">
+                                {{ task.approver.last_name }} {{ task.approver.first_name|slice:":1" }}.{{ task.approver.middle_name|slice:":1" }}.
+                            </span>
+                        {% else %}
+                            <span style="color:#ccc;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr class="no-match-row" id="no-match" style="display:none;">
+                    <td colspan="7">Нет поручений, соответствующих фильтрам</td>
+                </tr>
+            </tbody>
+        </table>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">📭</div>
+            <div>Поручений со сроком до {{ deadline_date|date:"d.m.Y" }} не найдено.</div>
+        </div>
+        {% endif %}
+
+    {% elif not error %}
+    <div class="empty-state">
+        <div class="empty-state__icon">📅</div>
+        <div>Выберите дату и нажмите «Загрузить»</div>
+    </div>
+    {% endif %}
+
+    <div class="page-footer">Система контроля исполнения поручений · ОАО «Доломит»</div>
+</div>
+
+
+<script>
+// ── БЫСТРЫЙ ВЫБОР ДАТЫ ──────────────────────────────────
+function setDate(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    document.getElementById('deadline-input').value = d.toISOString().split('T')[0];
+}
+function setEndOfMonth() {
+    const d = new Date();
+    document.getElementById('deadline-input').value =
+        new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+}
+function setEndOfNextMonth() {
+    const d = new Date();
+    document.getElementById('deadline-input').value =
+        new Date(d.getFullYear(), d.getMonth() + 2, 0).toISOString().split('T')[0];
+}
+
+// ── ЗАПОЛНЕНИЕ БЕЙДЖЕЙ ДНЕЙ ─────────────────────────────
+(function() {
+    const today = new Date(); today.setHours(0,0,0,0);
+    document.querySelectorAll('.days-badge[data-deadline]').forEach(el => {
+        const d = new Date(el.dataset.deadline); d.setHours(0,0,0,0);
+        const diff = Math.round((d - today) / 86400000);
+        if (diff < 0) {
+            el.textContent = `просрочено ${Math.abs(diff)} дн.`;
+        } else if (diff === 0) {
+            el.textContent = 'сегодня';
+        } else if (diff === 1) {
+            el.textContent = 'завтра';
+        } else {
+            el.textContent = `${diff} дн.`;
+        }
+    });
+})();
+
+// ── КЛИЕНТСКАЯ ФИЛЬТРАЦИЯ ───────────────────────────────
+const tbody        = document.getElementById('task-tbody');
+const noMatch      = document.getElementById('no-match');
+const visibleCount = document.getElementById('visible-count');
+const activeBadges = document.getElementById('active-filters');
+const badgesLabel  = document.getElementById('active-filters-label');
+
+if (tbody) {
+    const rows = Array.from(tbody.querySelectorAll('tr[data-status]'));
+    const total = rows.length;
+
+    let filters = { executor: '', dept: '', status: '' };
+
+    function applyFilters() {
+        let count = 0;
+        rows.forEach(row => {
+            const okExec   = !filters.executor || row.dataset.executorLower.includes(filters.executor.toLowerCase());
+            const okDept   = !filters.dept   || row.dataset.deptId === filters.dept;
+            const okStatus = !filters.status || row.dataset.status === filters.status;
+            const visible  = okExec && okDept && okStatus;
+            row.classList.toggle('hidden-row', !visible);
+            if (visible) count++;
+        });
+        visibleCount.textContent = count;
+        noMatch.style.display = (count === 0) ? '' : 'none';
+        renderBadges();
+    }
+
+    function renderBadges() {
+        // Очищаем старые бейджи (кроме лейбла)
+        activeBadges.querySelectorAll('.filter-badge').forEach(b => b.remove());
+
+        const items = [];
+        if (filters.executor) items.push({ key: 'executor', label: `Исполнитель: ${filters.executor}` });
+        if (filters.dept) {
+            const sel = document.getElementById('filter-dept');
+            items.push({ key: 'dept', label: `Цех: ${sel.options[sel.selectedIndex].text}` });
+        }
+        if (filters.status) {
+            const sel = document.getElementById('filter-status');
+            items.push({ key: 'status', label: sel.options[sel.selectedIndex].text });
+        }
+
+        badgesLabel.style.display = items.length ? '' : 'none';
+        items.forEach(item => {
+            const b = document.createElement('span');
+            b.className = 'filter-badge';
+            b.innerHTML = `${item.label} <span class="filter-badge__x">×</span>`;
+            b.onclick = () => clearFilter(item.key);
+            activeBadges.appendChild(b);
+        });
+    }
+
+    function clearFilter(key) {
+        filters[key] = '';
+        if (key === 'executor') document.getElementById('filter-executor').value = '';
+        if (key === 'dept')     document.getElementById('filter-dept').value = '';
+        if (key === 'status')   document.getElementById('filter-status').value = '';
+        applyFilters();
+    }
+
+    window.resetFilters = function() {
+        filters = { executor: '', dept: '', status: '' };
+        document.getElementById('filter-executor').value = '';
+        document.getElementById('filter-dept').value = '';
+        document.getElementById('filter-status').value = '';
+        applyFilters();
+    };
+
+    // Вешаем обработчики
+    let debounce;
+    document.getElementById('filter-executor').addEventListener('input', e => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => { filters.executor = e.target.value.trim(); applyFilters(); }, 200);
+    });
+    document.getElementById('filter-dept').addEventListener('change', e => {
+        filters.dept = e.target.value; applyFilters();
+    });
+    document.getElementById('filter-status').addEventListener('change', e => {
+        filters.status = e.target.value; applyFilters();
+    });
+}
+
+// ── СОРТИРОВКА ──────────────────────────────────────────
+let sortState = { col: null, asc: true };
+
+document.querySelectorAll('.task-table th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+        const col = parseInt(th.dataset.col);
+        if (sortState.col === col) sortState.asc = !sortState.asc;
+        else { sortState.col = col; sortState.asc = true; }
+
+        document.querySelectorAll('.task-table th').forEach(h => {
+            h.classList.remove('sorted-asc', 'sorted-desc');
+        });
+        th.classList.add(sortState.asc ? 'sorted-asc' : 'sorted-desc');
+
+        const rows = Array.from(tbody.querySelectorAll('tr[data-status]'));
+        rows.sort((a, b) => {
+            const ta = a.cells[col]?.textContent.trim() || '';
+            const tb = b.cells[col]?.textContent.trim() || '';
+            // Для даты — сортируем по data-deadline
+            if (col === 2) {
+                return sortState.asc
+                    ? a.dataset.deadline.localeCompare(b.dataset.deadline)
+                    : b.dataset.deadline.localeCompare(a.dataset.deadline);
+            }
+            return sortState.asc ? ta.localeCompare(tb, 'ru') : tb.localeCompare(ta, 'ru');
+        });
+        rows.forEach(r => tbody.appendChild(r));
+    });
+});
+
+// ── ПЕЧАТЬ ОТФИЛЬТРОВАННЫХ ──────────────────────────────
+function printFiltered() {
+    // Собираем id видимых строк через их порядковый индекс в исходном наборе
+    const visibleDeadlines = [];
+    if (tbody) {
+        tbody.querySelectorAll('tr[data-status]:not(.hidden-row)').forEach(row => {
+            visibleDeadlines.push(row.dataset.deadline);
+        });
+    }
+    // Передаём активные фильтры в печатную страницу
+    const params = new URLSearchParams(window.location.search);
+    params.set('print', '1');
+    if (filters && filters.executor) params.set('pexec', filters.executor);
+    if (filters && filters.dept)     params.set('pdept', filters.dept);
+    if (filters && filters.status)   params.set('pstatus', filters.status);
+    window.open('?' + params.toString(), '_blank');
+}
+</script>
+
+</body>
+</html>

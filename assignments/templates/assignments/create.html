@@ -1,0 +1,638 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}Новое поручение{% endblock %}
+{% block breadcrumb %}
+<span class="sep">›</span><a href="{% url 'assignments:list' %}">Поручения</a>
+<span class="sep">›</span><span class="current">Создать</span>
+{% endblock %}
+
+{% block extra_css %}
+.content { background: #f5f5f3; }
+
+.create-wrap {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 1050px) { .create-wrap { grid-template-columns: 1fr; } }
+
+.panel { background: #fff; border: 1px solid #e8e8e4; margin-bottom: 16px; overflow: visible; }
+.panel__head { padding: 13px 20px; border-bottom: 1px solid #f0f0ee; display:flex; align-items:center; justify-content:space-between; }
+.panel__title { font-family:var(--font-h); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+.panel__body  { padding: 20px; }
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 650px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+.error-msg { color: #c0392b; font-size: 11.5px; margin-top: 5px; }
+
+/* ══ ДАТА — чистый вариант ══ */
+.date-field { position: relative; display: block; }
+.date-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #e0e0dc;
+    font-family: var(--font-b);
+    font-size: 13px;
+    color: #111;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    background-size: 16px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+}
+.date-input::-webkit-calendar-picker-indicator {
+    position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%; opacity: 0; cursor: pointer; margin: 0; padding: 0;
+}
+.date-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,.1); }
+
+/* Быстрые кнопки дат */
+.qbtns { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.qbtn {
+    padding: 5px 10px;
+    font-family: var(--font-b); font-size: 11px;
+    border: 1px solid #e0e0dc; background: #fff; color: #555;
+    cursor: pointer; white-space: nowrap; transition: all .12s;
+}
+.qbtn:hover, .qbtn.active { background: var(--dark); color: #fff; border-color: var(--dark); }
+
+/* ══ КАСТОМНЫЙ SELECT С ПОИСКОМ ══ */
+.cs { position: relative; }
+.cs-btn {
+    width: 100%; padding: 8px 32px 8px 12px;
+    border: 1px solid #e0e0dc; background: #fff;
+    font-family: var(--font-b); font-size: 13px; color: #111;
+    cursor: pointer; text-align: left; display: flex; align-items: center;
+    min-height: 38px; position: relative;
+    transition: border-color .15s, box-shadow .15s; outline: none;
+}
+.cs-btn:focus, .cs-btn.open {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,.1);
+}
+.cs-btn__val { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-btn__val.ph { color: #bbb; }
+.cs-btn__arr { position: absolute; right: 10px; font-size: 10px; color: #aaa; transition: transform .15s; pointer-events: none; }
+.cs-btn.open .cs-btn__arr { transform: rotate(180deg); }
+
+.cs-drop {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+    background: #fff; border: 1px solid #e0e0dc;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    z-index: 300; display: none; flex-direction: column; max-height: 260px;
+}
+.cs-drop.open { display: flex; }
+.cs-drop__search { padding: 8px; border-bottom: 1px solid #f0f0ee; flex-shrink: 0; }
+.cs-drop__search input {
+    width: 100%; padding: 6px 10px; border: 1px solid #e8e8e4;
+    font-family: var(--font-b); font-size: 12.5px; outline: none; background: #fafaf8;
+}
+.cs-drop__search input:focus { border-color: var(--accent); }
+.cs-drop__list { overflow-y: auto; flex: 1; }
+.cs-opt {
+    padding: 8px 12px; font-size: 12.5px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: background .1s;
+}
+.cs-opt:hover { background: #f5f5f3; }
+.cs-opt.sel { background: #eef3ff; }
+.cs-opt__check { color: var(--accent); font-size: 12px; opacity: 0; flex-shrink: 0; }
+.cs-opt.sel .cs-opt__check { opacity: 1; }
+.cs-opt__sub { font-size: 10.5px; color: #aaa; margin-top: 1px; }
+.cs-opt.gone { display: none; }
+.cs-none { padding: 14px 12px; font-size: 12px; color: #aaa; text-align: center; display: none; }
+
+/* ══ НОМЕР С АВТО-КНОПКОЙ ══ */
+.num-wrap { display: flex; }
+.num-wrap .form-control { flex: 1; border-right: none; }
+.num-auto-btn {
+    padding: 0 12px; border: 1px solid #e0e0dc; background: #fafaf8;
+    color: #555; cursor: pointer; font-size: 12px; white-space: nowrap;
+    display: flex; align-items: center; gap: 5px; transition: all .12s;
+    font-family: var(--font-b);
+}
+.num-auto-btn:hover { background: var(--dark); color: #fff; border-color: var(--dark); }
+.num-auto-btn.loading { opacity: .6; pointer-events: none; }
+
+/* ══ ИСПОЛНИТЕЛИ ══ */
+.exec-search-field { position: relative; margin-bottom: 10px; }
+.exec-search-icon  { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #bbb; pointer-events: none; }
+.exec-search-input {
+    width: 100%; padding: 9px 10px 9px 34px;
+    border: 1.5px solid #e0e0dc; font-family: var(--font-b); font-size: 13px;
+    outline: none; transition: border-color .15s, box-shadow .15s; background: #fafaf8;
+}
+.exec-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,.1); background: #fff; }
+
+.dept-filter { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.dept-btn {
+    padding: 4px 10px; font-family: var(--font-b); font-size: 10.5px; font-weight: 700;
+    border: 1px solid #e0e0dc; background: #fff; color: #666; cursor: pointer; transition: all .12s;
+}
+.dept-btn:hover { border-color: #bbb; color: #333; }
+.dept-btn.active { background: var(--dark); color: #fff; border-color: var(--dark); }
+
+.selected-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chip-exec {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 5px 4px 10px; background: var(--dark); color: #fff;
+    font-size: 11.5px; font-weight: 700;
+    animation: chipIn .15s ease;
+}
+@keyframes chipIn { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
+.chip-exec__remove {
+    width: 16px; height: 16px; background: rgba(255,255,255,.2);
+    border: none; color: #fff; cursor: pointer; font-size: 10px;
+    display: flex; align-items: center; justify-content: center; transition: background .12s;
+}
+.chip-exec__remove:hover { background: rgba(255,255,255,.4); }
+
+.exec-list-wrap { border: 1px solid #e8e8e4; max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
+.exec-dept-header {
+    padding: 6px 12px; font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .1em; color: #aaa; background: #fafaf8;
+    border-bottom: 1px solid #f0f0ee; position: sticky; top: 0; z-index: 1;
+}
+.exec-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    cursor: pointer; border-bottom: 1px solid #f8f8f6; transition: background .1s;
+}
+.exec-item:hover  { background: #f8f8f6; }
+.exec-item.checked { background: #eef3ff; }
+.exec-item.hidden  { display: none; }
+.exec-item__cb  { accent-color: var(--dark); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+.exec-item__avatar {
+    width: 28px; height: 28px; background: #e8e8e4; color: #555;
+    font-family: var(--font-h); font-weight: 700; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    text-transform: uppercase; flex-shrink: 0;
+}
+.exec-item.checked .exec-item__avatar { background: var(--dark); color: #fff; }
+.exec-item__name { font-size: 12.5px; font-weight: 700; line-height: 1.2; }
+.exec-item__pos  { font-size: 10.5px; color: #aaa; margin-top: 1px; }
+.exec-empty { padding: 24px; text-align: center; color: #bbb; font-size: 12.5px; display: none; }
+
+/* ══ ПРАВАЯ ПАНЕЛЬ ══ */
+.sticky-side { position: sticky; top: 20px; }
+.preview-dark { background: var(--dark); color: #fff; padding: 20px; }
+.preview-dark__label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); margin-bottom: 8px; }
+.preview-num  { font-family: var(--font-h); font-size: 52px; font-weight: 700; line-height: 1; }
+.preview-word { font-size: 13px; color: rgba(255,255,255,.5); margin-top: 4px; }
+.preview-names { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.1); max-height: 130px; overflow-y: auto; }
+.preview-name-item { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 11.5px; color: rgba(255,255,255,.75); }
+.preview-name-item::before { content: ''; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+
+.side-submit { padding: 16px 20px; }
+.notify-row { display: flex; align-items: center; gap: 9px; padding: 10px 0 14px; cursor: pointer; }
+.notify-row input { accent-color: var(--dark); width: 15px; height: 15px; flex-shrink: 0; }
+.notify-row__t { font-size: 12px; color: #333; }
+.notify-row__s { font-size: 10px; color: #aaa; }
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'assignments:list' %}" class="btn btn--ghost btn--sm">← Назад</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Новое поручение</h1>
+        <div class="page-subtitle">Выберите исполнителей — для каждого создаётся отдельное поручение</div>
+    </div>
+</div>
+
+<form method="post" id="create-form">
+{% csrf_token %}
+
+<div class="create-wrap">
+
+    <!-- ══ ЛЕВАЯ ══ -->
+    <div>
+
+        <!-- Реквизиты -->
+        <div class="panel">
+            <div class="panel__head"><div class="panel__title">Реквизиты документа</div></div>
+            <div class="panel__body">
+
+                <div class="form-group">
+                    <label class="form-label">Вид поручения *</label>
+                    <div class="cs" id="cs-type">
+                        <button type="button" class="cs-btn" onclick="openCS('cs-type')">
+                            <span class="cs-btn__val ph" id="cs-type-lbl">— Выберите вид —</span>
+                            <span class="cs-btn__arr">▾</span>
+                        </button>
+                        <div class="cs-drop" id="cs-type-drop">
+                            <div class="cs-drop__search">
+                                <input type="text" placeholder="Поиск…" oninput="filterCS('cs-type',this.value)" id="cs-type-srch">
+                            </div>
+                            <div class="cs-drop__list">
+                                {% for t in form.assignment_type.field.queryset %}
+                                <div class="cs-opt" data-v="{{ t.id }}" data-l="{{ t.name }}" onclick="pickCS('cs-type',this)">
+                                    <span class="cs-opt__check">✓</span>
+                                    <span>{{ t.name }}</span>
+                                </div>
+                                {% endfor %}
+                                <div class="cs-none">Ничего не найдено</div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="assignment_type" id="cs-type-val">
+                    </div>
+                    {% if form.assignment_type.errors %}<div class="error-msg">{{ form.assignment_type.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label">Номер документа *</label>
+                        <div class="num-wrap">
+                            {{ form.document_number }}
+                            <button type="button" class="num-auto-btn" id="num-auto-btn" onclick="autoNumber()" title="Подобрать следующий номер">
+                                ✨ Авто
+                            </button>
+                        </div>
+                        <div style="font-size:10px;color:#aaa;margin-top:4px;" id="num-hint"></div>
+                        {% if form.document_number.errors %}<div class="error-msg">{{ form.document_number.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дата издания *</label>
+                        <div class="date-field">
+                            {{ form.issue_date }}
+                        </div>
+                        {% if form.issue_date.errors %}<div class="error-msg">{{ form.issue_date.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Текст поручения *</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<div class="error-msg">{{ form.description.errors.0 }}</div>{% endif %}
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Срок и ответственные -->
+        <div class="panel">
+            <div class="panel__head"><div class="panel__title">Сроки и ответственные</div></div>
+            <div class="panel__body">
+
+                <div class="form-group">
+                    <label class="form-label">Срок исполнения *</label>
+                    <div class="date-field">
+                        {{ form.deadline }}
+                    </div>
+                    <div class="qbtns">
+                        <button type="button" class="qbtn" onclick="setDL(7,this)">+7 дн.</button>
+                        <button type="button" class="qbtn" onclick="setDL(14,this)">+14 дн.</button>
+                        <button type="button" class="qbtn" onclick="setDL(30,this)">+30 дн.</button>
+                        <button type="button" class="qbtn" onclick="setDLMonth(this)">Конец месяца</button>
+                    </div>
+                    {% if form.deadline.errors %}<div class="error-msg">{{ form.deadline.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label">Контролирующий</label>
+                        <div class="cs" id="cs-ctrl">
+                            <button type="button" class="cs-btn" onclick="openCS('cs-ctrl')">
+                                <span class="cs-btn__val ph" id="cs-ctrl-lbl">— Не назначен —</span>
+                                <span class="cs-btn__arr">▾</span>
+                            </button>
+                            <div class="cs-drop" id="cs-ctrl-drop">
+                                <div class="cs-drop__search">
+                                    <input type="text" placeholder="Поиск…" oninput="filterCS('cs-ctrl',this.value)" id="cs-ctrl-srch">
+                                </div>
+                                <div class="cs-drop__list">
+                                    <div class="cs-opt" data-v="" data-l="— Не назначен —" onclick="pickCS('cs-ctrl',this)">
+                                        <span class="cs-opt__check">✓</span><span style="color:#aaa;">— Не назначен —</span>
+                                    </div>
+                                    {% for e in form.controller.field.queryset %}
+                                    <div class="cs-opt" data-v="{{ e.id }}" data-l="{{ e.last_name }} {{ e.first_name|slice:':1' }}.{{ e.middle_name|slice:':1' }}." onclick="pickCS('cs-ctrl',this)">
+                                        <span class="cs-opt__check">✓</span>
+                                        <div>
+                                            <div>{{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.</div>
+                                            <div class="cs-opt__sub">{{ e.department.name|default:"—" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="cs-none">Ничего не найдено</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="controller" id="cs-ctrl-val">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Визирующий</label>
+                        <div class="cs" id="cs-appr">
+                            <button type="button" class="cs-btn" onclick="openCS('cs-appr')">
+                                <span class="cs-btn__val ph" id="cs-appr-lbl">— Не назначен —</span>
+                                <span class="cs-btn__arr">▾</span>
+                            </button>
+                            <div class="cs-drop" id="cs-appr-drop">
+                                <div class="cs-drop__search">
+                                    <input type="text" placeholder="Поиск…" oninput="filterCS('cs-appr',this.value)" id="cs-appr-srch">
+                                </div>
+                                <div class="cs-drop__list">
+                                    <div class="cs-opt" data-v="" data-l="— Не назначен —" onclick="pickCS('cs-appr',this)">
+                                        <span class="cs-opt__check">✓</span><span style="color:#aaa;">— Не назначен —</span>
+                                    </div>
+                                    {% for e in form.approver.field.queryset %}
+                                    <div class="cs-opt" data-v="{{ e.id }}" data-l="{{ e.last_name }} {{ e.first_name|slice:':1' }}.{{ e.middle_name|slice:':1' }}." onclick="pickCS('cs-appr',this)">
+                                        <span class="cs-opt__check">✓</span>
+                                        <div>
+                                            <div>{{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.</div>
+                                            <div class="cs-opt__sub">{{ e.department.name|default:"—" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="cs-none">Ничего не найдено</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="approver" id="cs-appr-val">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Исполнители -->
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">Исполнители *</div>
+                <div id="exec-count-head" style="font-size:11px;color:#aaa;"></div>
+            </div>
+            <div class="panel__body">
+
+                {% if form.executors.errors %}
+                <div class="alert alert--error" style="margin-bottom:12px;">{{ form.executors.errors.0 }}</div>
+                {% endif %}
+
+                <!-- Выбранные чипы -->
+                <div class="selected-chips" id="selected-chips"></div>
+
+                <!-- Поиск -->
+                <div class="exec-search-field">
+                    <span class="exec-search-icon">🔍</span>
+                    <input type="text" class="exec-search-input" id="exec-search"
+                           placeholder="Поиск по фамилии, имени, должности…"
+                           oninput="filterExec(this.value)">
+                </div>
+
+                <!-- Фильтр по цеху -->
+                <div class="dept-filter">
+                    <button type="button" class="dept-btn active" data-dept="" onclick="filterDept(this)">Все</button>
+                    {% regroup form.executors.field.queryset by department as dept_list %}
+                    {% for dept in dept_list %}
+                    <button type="button" class="dept-btn"
+                            data-dept="{{ dept.grouper.name|default:'Без подразделения' }}"
+                            onclick="filterDept(this)">
+                        {{ dept.grouper.name|default:"Без подразд." }}
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <!-- Список -->
+                <div class="exec-list-wrap">
+                    {% regroup form.executors.field.queryset by department as dept_list %}
+                    {% for dept in dept_list %}
+                    <div class="exec-dept-header" data-dept="{{ dept.grouper.name|default:'Без подразделения' }}">
+                        {{ dept.grouper.name|default:"Без подразделения" }}
+                    </div>
+                    {% for emp in dept.list %}
+                    <div class="exec-item"
+                         data-id="{{ emp.id }}"
+                         data-name="{{ emp.last_name }} {{ emp.first_name|slice:':1' }}.{{ emp.middle_name|slice:':1' }}."
+                         data-full="{{ emp.last_name }} {{ emp.first_name }} {{ emp.middle_name }}"
+                         data-pos="{{ emp.position.name|default:'' }}"
+                         data-dept="{{ emp.department.name|default:'Без подразделения' }}"
+                         onclick="toggleExec(this)">
+                        <input type="checkbox" name="executors" value="{{ emp.id }}"
+                               class="exec-item__cb"
+                               onclick="event.stopPropagation();"
+                               onchange="syncExec(this)">
+                        <div class="exec-item__avatar">{{ emp.last_name|slice:":1" }}{{ emp.first_name|slice:":1" }}</div>
+                        <div>
+                            <div class="exec-item__name">{{ emp.last_name }} {{ emp.first_name }} {{ emp.middle_name }}</div>
+                            <div class="exec-item__pos">{{ emp.position.name|default:"—" }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endfor %}
+                    <div class="exec-empty" id="exec-empty">Сотрудников не найдено</div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══ ПРАВАЯ ══ -->
+    <div class="sticky-side">
+        <div class="panel" style="overflow:hidden;">
+            <div class="preview-dark">
+                <div class="preview-dark__label">Будет создано</div>
+                <div class="preview-num" id="preview-num">0</div>
+                <div class="preview-word" id="preview-word">поручений — выберите исполнителей</div>
+                <div class="preview-names" id="preview-names" style="display:none;"></div>
+            </div>
+            <div class="side-submit">
+                <label class="notify-row">
+                    <input type="checkbox" name="send_notifications" checked>
+                    <div>
+                        <div class="notify-row__t">Отправить уведомления</div>
+                        <div class="notify-row__s">Telegram-сообщения исполнителям</div>
+                    </div>
+                </label>
+                <button type="submit" class="btn btn--primary" style="width:100%;" id="submit-btn" disabled>
+                    ✓ Создать поручения
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+// ══ КАСТОМНЫЙ SELECT ══════════════════════════════════
+function openCS(id) {
+    const drop = document.getElementById(id + '-drop');
+    const btn  = document.querySelector(`#${id} .cs-btn`);
+    const isOpen = drop.classList.contains('open');
+    closeAllCS();
+    if (!isOpen) {
+        drop.classList.add('open'); btn.classList.add('open');
+        const srch = document.getElementById(id + '-srch');
+        if (srch) { srch.value = ''; filterCS(id, ''); setTimeout(() => srch.focus(), 50); }
+    }
+}
+function closeAllCS() {
+    document.querySelectorAll('.cs-drop.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.cs-btn.open').forEach(b => b.classList.remove('open'));
+}
+function pickCS(id, el) {
+    const val = el.dataset.v, lbl = el.dataset.l;
+    document.querySelectorAll(`#${id}-drop .cs-opt`).forEach(o => o.classList.remove('sel'));
+    el.classList.add('sel');
+    const lblEl = document.getElementById(id + '-lbl');
+    lblEl.textContent = lbl;
+    lblEl.classList.toggle('ph', !val);
+    document.getElementById(id + '-val').value = val;
+    closeAllCS();
+    if (id === 'cs-type' && !document.querySelector('[name="document_number"]').value) {
+        autoNumber(val);
+    }
+}
+function filterCS(id, q) {
+    const lq = q.toLowerCase();
+    let vis = 0;
+    document.querySelectorAll(`#${id}-drop .cs-opt`).forEach(o => {
+        const show = o.textContent.toLowerCase().includes(lq);
+        o.classList.toggle('gone', !show);
+        if (show) vis++;
+    });
+    const none = document.querySelector(`#${id}-drop .cs-none`);
+    if (none) none.style.display = vis ? 'none' : 'block';
+}
+document.addEventListener('click', e => { if (!e.target.closest('.cs')) closeAllCS(); });
+
+// ══ ИСПОЛНИТЕЛИ ═══════════════════════════════════════
+const selectedExecs = new Map();
+
+function toggleExec(row) {
+    const cb = row.querySelector('.exec-item__cb');
+    cb.checked = !cb.checked;
+    updateExecState(row, cb.checked);
+}
+function syncExec(cb) {
+    updateExecState(cb.closest('.exec-item'), cb.checked);
+}
+function updateExecState(row, checked) {
+    const id = row.dataset.id, name = row.dataset.name;
+    row.classList.toggle('checked', checked);
+    row.querySelector('.exec-item__cb').checked = checked;
+    if (checked) selectedExecs.set(id, name);
+    else         selectedExecs.delete(id);
+    renderChips();
+    renderPreview();
+}
+function renderChips() {
+    const wrap = document.getElementById('selected-chips');
+    wrap.innerHTML = '';
+    selectedExecs.forEach((name, id) => {
+        const chip = document.createElement('div');
+        chip.className = 'chip-exec';
+        chip.innerHTML = `${name} <button type="button" class="chip-exec__remove" onclick="removeExec('${id}')">✕</button>`;
+        wrap.appendChild(chip);
+    });
+}
+function removeExec(id) {
+    const row = document.querySelector(`.exec-item[data-id="${id}"]`);
+    if (row) { row.classList.remove('checked'); row.querySelector('.exec-item__cb').checked = false; }
+    selectedExecs.delete(id);
+    renderChips();
+    renderPreview();
+}
+function renderPreview() {
+    const n    = selectedExecs.size;
+    const btn  = document.getElementById('submit-btn');
+    const num  = document.getElementById('preview-num');
+    const word = document.getElementById('preview-word');
+    const names = document.getElementById('preview-names');
+    const head  = document.getElementById('exec-count-head');
+
+    num.textContent = n;
+    btn.disabled    = n === 0;
+    head.textContent = n > 0 ? `Выбрано: ${n}` : '';
+
+    if (n === 0) {
+        word.textContent    = 'поручений — выберите исполнителей';
+        names.style.display = 'none';
+    } else {
+        word.textContent    = n === 1 ? 'поручение' : n < 5 ? 'поручения' : 'поручений';
+        names.style.display = 'block';
+        names.innerHTML = '';
+        selectedExecs.forEach(name => {
+            names.innerHTML += `<div class="preview-name-item">${name}</div>`;
+        });
+    }
+}
+
+function filterExec(q) {
+    const lq = q.toLowerCase().trim();
+    const activeDept = document.querySelector('.dept-btn.active')?.dataset.dept || '';
+    let anyVisible = false;
+    document.querySelectorAll('.exec-item').forEach(row => {
+        const ok = (!lq || row.dataset.full.toLowerCase().includes(lq) || row.dataset.pos.toLowerCase().includes(lq))
+                && (!activeDept || row.dataset.dept === activeDept);
+        row.classList.toggle('hidden', !ok);
+        if (ok) anyVisible = true;
+    });
+    document.querySelectorAll('.exec-dept-header').forEach(h => {
+        const dept = h.dataset.dept;
+        const has = [...document.querySelectorAll(`.exec-item[data-dept="${dept}"]`)].some(r => !r.classList.contains('hidden'));
+        h.style.display = has ? '' : 'none';
+    });
+    document.getElementById('exec-empty').style.display = anyVisible ? 'none' : 'block';
+}
+
+function filterDept(btn) {
+    document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const dept = btn.dataset.dept;
+    document.querySelectorAll('.exec-item').forEach(r => r.classList.toggle('hidden', !(!dept || r.dataset.dept === dept)));
+    document.querySelectorAll('.exec-dept-header').forEach(h => h.style.display = (!dept || h.dataset.dept === dept) ? '' : 'none');
+    document.getElementById('exec-search').value = '';
+    document.getElementById('exec-empty').style.display = 'none';
+}
+
+// ══ АВТО-НОМЕР ════════════════════════════════════════
+function autoNumber(typeId) {
+    typeId = typeId || document.getElementById('cs-type-val').value;
+    const btn  = document.getElementById('num-auto-btn');
+    const hint = document.getElementById('num-hint');
+    btn.classList.add('loading');
+    hint.textContent = '⏳ Подбираем номер…';
+    fetch(`{% url 'assignments:next_number' %}?type=${typeId}`)
+        .then(r => r.json())
+        .then(data => {
+            btn.classList.remove('loading');
+            if (data.number) {
+                document.querySelector('[name="document_number"]').value = data.number;
+                hint.textContent = '✓ Номер подобран автоматически';
+                setTimeout(() => hint.textContent = '', 3000);
+            } else {
+                hint.textContent = 'Не удалось определить — введите вручную';
+                setTimeout(() => hint.textContent = '', 3000);
+            }
+        })
+        .catch(() => { btn.classList.remove('loading'); hint.textContent = ''; });
+}
+
+// ══ БЫСТРЫЕ ДАТЫ ══════════════════════════════════════
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+function setDL(days, btn) {
+    const d = new Date(); d.setDate(d.getDate() + days);
+    document.querySelector('[name="deadline"]').value = isoDate(d);
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function setDLMonth(btn) {
+    const d = new Date();
+    document.querySelector('[name="deadline"]').value = isoDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+<div class="cs" id="{{ cs_id }}">
+    <button type="button" class="cs-btn" onclick="openCS('{{ cs_id }}')">
+        <span class="cs-btn__val ph" id="{{ cs_id }}-lbl">{{ placeholder }}</span>
+        <span class="cs-btn__arr">▾</span>
+    </button>
+    <div class="cs-drop" id="{{ cs_id }}-drop">
+        <div class="cs-drop__search">
+            <input type="text" placeholder="Поиск…" oninput="filterCS('{{ cs_id }}',this.value)" id="{{ cs_id }}-srch">
+        </div>
+        <div class="cs-drop__list">
+            <div class="cs-opt" data-v="" data-l="{{ placeholder }}" onclick="pickCS('{{ cs_id }}',this)">
+                <span class="cs-opt__check">✓</span>
+                <span style="color:#aaa;">{{ placeholder }}</span>
+            </div>
+            {% for e in queryset %}
+            <div class="cs-opt" data-v="{{ e.id }}" data-l="{{ e.last_name }} {{ e.first_name }}" onclick="pickCS('{{ cs_id }}',this)">
+                <span class="cs-opt__check">✓</span>
+                <div>
+                    <div>{{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.</div>
+                    <div class="cs-opt__sub">{{ e.department.name|default:"—" }}</div>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="cs-none">Ничего не найдено</div>
+        </div>
+    </div>
+    <input type="hidden" name="{{ fname }}" id="{{ cs_id }}-val">
+</div>

@@ -1,0 +1,642 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}Поручения{% endblock %}
+{% block breadcrumb %}<span class="sep">›</span><span class="current">Поручения</span>{% endblock %}
+
+{% block extra_css %}
+.content { background: #f5f5f3; }
+
+/* ══ ТУЛБАР ══ */
+.toolbar {
+    background: #fff;
+    border: 1px solid #e8e8e4;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+.toolbar__top {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #f0f0ee;
+}
+.toolbar__title {
+    font-family: var(--font-h);
+    font-size: 18px;
+    font-weight: 700;
+    color: #111;
+}
+.toolbar__count {
+    font-size: 11px;
+    color: #aaa;
+    margin-left: 8px;
+    font-family: var(--font-b);
+    font-weight: 400;
+}
+
+/* ── Поиск ── */
+.search-wrap { position: relative; flex:1; max-width:300px; min-width:160px; }
+.search-wrap__icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:13px; color:#bbb; pointer-events:none; }
+.search-input {
+    width:100%; font-family:var(--font-b); font-size:13px;
+    padding:7px 10px 7px 32px;
+    border:1px solid #e8e8e4; background:#fafaf8; color:#111; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+}
+.search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,142,247,.1); background:#fff; }
+
+/* ── Фильтры ── */
+.filters-wrap {
+    background: #fafaf8;
+    border-bottom: 1px solid #f0f0ee;
+}
+.filters-row {
+    padding: 10px 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.filters-row + .filters-row { padding-top: 0; }
+
+.fg { display:flex; flex-direction:column; gap:3px; }
+.fg label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#bbb; }
+
+.f-select, .f-date {
+    font-family:var(--font-b); font-size:12px;
+    padding:6px 8px;
+    border:1px solid #e8e8e4; background:#fff; color:#111;
+    outline:none; cursor:pointer;
+    transition:border-color .15s;
+}
+.f-select { min-width:140px; }
+.f-date   { min-width:120px; }
+.f-select:focus, .f-date:focus { border-color:var(--accent); }
+.f-active { border-color:var(--accent) !important; background:#eef3ff !important; }
+
+/* Быстрые даты */
+.quick-dates {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.qd-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#bbb; display:block; margin-bottom:3px; }
+.qbtn {
+    font-family:var(--font-b); font-size:11px;
+    padding:6px 10px;
+    border:1px solid #e8e8e4; background:#fff; color:#555;
+    cursor:pointer; white-space:nowrap;
+    transition:all .12s;
+}
+.qbtn:hover { background:var(--dark); color:#fff; border-color:var(--dark); }
+.qbtn--active { background:var(--dark); color:#fff; border-color:var(--dark); }
+
+/* Активные бейджи фильтров */
+.active-filters {
+    padding: 8px 20px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    border-top: 1px solid #f0f0ee;
+    background: #fff;
+}
+.af-label { font-size:9.5px; color:#bbb; }
+.af-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px;
+    background:var(--dark); color:#fff; font-size:11px;
+    cursor:pointer; transition:background .12s;
+}
+.af-badge:hover { background:#333; }
+
+/* ══ МАССОВЫЕ ДЕЙСТВИЯ ══ */
+.bulk-bar {
+    background:var(--dark); color:#fff;
+    padding:10px 20px;
+    display:none; align-items:center; gap:10px; flex-wrap:wrap;
+    border-top:1px solid rgba(255,255,255,.1);
+}
+.bulk-bar.visible { display:flex; }
+.bulk-info { font-size:12.5px; font-weight:700; }
+.bulk-info span { color:var(--accent); }
+.bulk-sep { width:1px; height:20px; background:rgba(255,255,255,.2); flex-shrink:0; }
+.bbtn {
+    padding:5px 13px; font-family:var(--font-b); font-size:11.5px; font-weight:700;
+    cursor:pointer; border:1px solid rgba(255,255,255,.25); background:transparent; color:#fff;
+    transition:background .12s; border-radius:2px; white-space:nowrap;
+}
+.bbtn:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.5); }
+.bbtn--x { background:none; border:none; color:rgba(255,255,255,.4); font-size:18px; cursor:pointer; padding:0 4px; margin-left:auto; }
+.bbtn--x:hover { color:#fff; }
+
+/* ══ ТАБЛИЦА ══ */
+.table-wrap { background:#fff; border:1px solid #e8e8e4; overflow-x:auto; }
+.at {
+    width:100%; border-collapse:collapse; font-size:12.5px;
+}
+.at thead tr { background:var(--dark); }
+.at th {
+    padding:10px 12px; text-align:left; color:#fff;
+    font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em;
+    white-space:nowrap; user-select:none;
+}
+.at th.s { cursor:pointer; }
+.at th.s:hover { background:rgba(255,255,255,.08); }
+.sort-ic { opacity:.35; margin-left:3px; font-size:10px; }
+.sort-ic.up { opacity:1; }
+.sort-ic.dn { opacity:1; }
+
+.at td { padding:11px 12px; border-bottom:1px solid #f0f0ee; vertical-align:middle; }
+.at tbody tr { transition:background .1s; }
+.at tbody tr:hover { background:#fafaf8; }
+.at tbody tr.sel { background:#eef3ff; }
+.at tbody tr:last-child td { border-bottom:none; }
+
+.col-cb { width:40px; text-align:center; }
+.col-cb input { cursor:pointer; width:15px; height:15px; accent-color:var(--dark); }
+
+.doc-type { font-size:9.5px; color:#aaa; text-transform:uppercase; letter-spacing:.04em; margin-bottom:1px; }
+.doc-num  { font-family:var(--font-h); font-weight:700; font-size:13px; white-space:nowrap; }
+.doc-date { font-size:10px; color:#bbb; margin-top:2px; }
+
+.cell-desc { max-width:280px; }
+.desc-txt { font-size:12.5px; line-height:1.4; color:#222; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+.pname { font-weight:700; font-size:11.5px; white-space:nowrap; }
+.pdept { font-size:10px; color:#aaa; margin-top:1px; white-space:nowrap; }
+
+.dl-date { font-family:var(--font-h); font-weight:700; font-size:13px; white-space:nowrap; }
+.dl-badge { display:inline-block; margin-top:3px; padding:1px 7px; font-size:9.5px; font-weight:700; white-space:nowrap; border-radius:1px; }
+.db-ov { background:#fde8e8; color:#c0392b; }
+.db-td { background:#fff3e0; color:#904000; }
+.db-sn { background:#e8f5e9; color:#2e7d32; }
+.db-ok { background:#f3f3f3; color:#888; }
+
+.sbadge { display:inline-block; padding:3px 9px; font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; border-radius:1px; white-space:nowrap; }
+.s-NEW         { background:#e3f2fd; color:#1565c0; }
+.s-IN_PROGRESS { background:#e8f5e9; color:#2e7d32; }
+.s-OVERDUE     { background:#fde8e8; color:#c0392b; }
+.s-DONE        { background:#f3f3f3; color:#777; }
+
+.row-acts { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+.at tbody tr:hover .row-acts { opacity:1; }
+.rbtn {
+    padding:4px 9px; font-size:11px; border:1px solid #e0e0e0; background:#fff; color:#555;
+    cursor:pointer; transition:all .12s; border-radius:2px; white-space:nowrap;
+}
+.rbtn:hover { border-color:var(--dark); color:var(--dark); }
+
+.table-footer { padding:10px 20px; border-top:1px solid #f0f0ee; display:flex; align-items:center; justify-content:space-between; font-size:11px; color:#aaa; background:#fafaf8; }
+
+.empty-table { text-align:center; padding:60px 20px; color:#bbb; }
+.empty-table__icon { font-size:36px; margin-bottom:10px; }
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'assignments:create' %}" class="btn btn--primary btn--sm">✏️ Новое поручение</a>
+{% endblock %}
+
+{% block content %}
+
+{% with has_filters=f_q|add:f_status|add:f_dept|add:f_executor|add:f_controller|add:f_approver|add:f_atype|add:f_date_from|add:f_date_to %}
+<form method="get" id="filter-form">
+
+    <div class="toolbar">
+        <!-- Верхняя строка: заголовок + поиск -->
+        <div class="toolbar__top">
+            <div>
+                <span class="toolbar__title">Поручения</span>
+                <span class="toolbar__count">{{ total }}</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <div class="search-wrap">
+                    <span class="search-wrap__icon">🔍</span>
+                    <input type="text" name="q" id="search-input" class="search-input"
+                           placeholder="Номер, текст, исполнитель…" value="{{ f_q }}">
+                </div>
+                {% if has_filters %}
+                <a href="{% url 'assignments:list' %}" class="btn btn--ghost btn--sm">✕ Сбросить</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="filters-wrap">
+
+            <!-- Строка 1: статус, цех, исполнитель, контролёр, виза -->
+            <div class="filters-row">
+                <div class="fg">
+                    <label>Статус</label>
+                    <select name="status" class="f-select {% if f_status %}f-active{% endif %}">
+                        <option value="">Все статусы</option>
+                        {% for val, label in status_choices %}
+                        <option value="{{ val }}" {% if f_status == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="fg">
+                    <label>Цех / подразделение</label>
+                    <select name="dept" class="f-select {% if f_dept %}f-active{% endif %}">
+                        <option value="">Все подразделения</option>
+                        {% for d in departments %}
+                        <option value="{{ d.id }}" {% if f_dept == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="fg">
+                    <label>Исполнитель</label>
+                    <select name="executor" class="f-select {% if f_executor %}f-active{% endif %}">
+                        <option value="">Все исполнители</option>
+                        {% for e in executors %}
+                        <option value="{{ e.id }}" {% if f_executor == e.id|stringformat:"s" %}selected{% endif %}>
+                            {{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="fg">
+                    <label>Контролирующий</label>
+                    <select name="controller" class="f-select {% if f_controller %}f-active{% endif %}">
+                        <option value="">Все</option>
+                        {% for e in controllers %}
+                        <option value="{{ e.id }}" {% if f_controller == e.id|stringformat:"s" %}selected{% endif %}>
+                            {{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="fg">
+                    <label>Визирующий</label>
+                    <select name="approver" class="f-select {% if f_approver %}f-active{% endif %}">
+                        <option value="">Все</option>
+                        {% for e in approvers %}
+                        <option value="{{ e.id }}" {% if f_approver == e.id|stringformat:"s" %}selected{% endif %}>
+                            {{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="fg">
+                    <label>Вид поручения</label>
+                    <select name="atype" class="f-select {% if f_atype %}f-active{% endif %}">
+                        <option value="">Все виды</option>
+                        {% for t in assignment_types %}
+                        <option value="{{ t.id }}" {% if f_atype == t.id|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Строка 2: даты + быстрые кнопки -->
+            <div class="filters-row" style="padding-bottom:12px;">
+                <div class="fg">
+                    <label>Срок с</label>
+                    <input type="date" name="date_from" id="date_from"
+                           class="f-date {% if f_date_from %}f-active{% endif %}"
+                           value="{{ f_date_from }}">
+                </div>
+
+                <div class="fg">
+                    <label>Срок по</label>
+                    <input type="date" name="date_to" id="date_to"
+                           class="f-date {% if f_date_to %}f-active{% endif %}"
+                           value="{{ f_date_to }}">
+                </div>
+
+                <!-- Быстрые кнопки -->
+                <div class="fg">
+                    <span class="qd-label">Быстрый выбор срока</span>
+                    <div class="quick-dates">
+                        <button type="button" class="qbtn" onclick="setDateTo(0)">Сегодня</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(3)">+3 дня</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(7)">+7 дней</button>
+                        <button type="button" class="qbtn" onclick="setDateTo(14)">+2 недели</button>
+                        <button type="button" class="qbtn" onclick="setEndMonth()">Конец месяца</button>
+                        <button type="button" class="qbtn" onclick="setEndNextMonth()">След. месяц</button>
+                        <button type="button" class="qbtn" onclick="clearDates()" style="color:#e53935;border-color:#fde8e8;">✕ Даты</button>
+                    </div>
+                </div>
+
+                <div class="fg" style="justify-content:flex-end;">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn--primary btn--sm">Применить</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Активные бейджи -->
+        {% if has_filters %}
+        <div class="active-filters">
+            <span class="af-label">Фильтры:</span>
+            {% if f_status %}
+            <span class="af-badge" onclick="clearFilter('status')">
+                Статус: {{ f_status }} ×
+            </span>
+            {% endif %}
+            {% if f_dept %}
+            <span class="af-badge" onclick="clearFilter('dept')">
+                Цех: {{ f_dept }} ×
+            </span>
+            {% endif %}
+            {% if f_executor %}
+            <span class="af-badge" onclick="clearFilter('executor')">Исполнитель ×</span>
+            {% endif %}
+            {% if f_controller %}
+            <span class="af-badge" onclick="clearFilter('controller')">Контролёр ×</span>
+            {% endif %}
+            {% if f_approver %}
+            <span class="af-badge" onclick="clearFilter('approver')">Визирующий ×</span>
+            {% endif %}
+            {% if f_atype %}
+            <span class="af-badge" onclick="clearFilter('atype')">Вид ×</span>
+            {% endif %}
+            {% if f_date_from or f_date_to %}
+            <span class="af-badge" onclick="clearFilter('date_from');clearFilter('date_to')">
+                Срок: {% if f_date_from %}с {{ f_date_from }}{% endif %}{% if f_date_to %} по {{ f_date_to }}{% endif %} ×
+            </span>
+            {% endif %}
+            {% if f_q %}
+            <span class="af-badge" onclick="clearFilter('q')">«{{ f_q }}» ×</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Массовые действия -->
+        <div class="bulk-bar" id="bulk-bar">
+            <div class="bulk-info">Выбрано: <span id="bulk-count">0</span></div>
+            <div class="bulk-sep"></div>
+            <button type="button" class="bbtn" onclick="bulkAction('status_progress')">▶ В работе</button>
+            <button type="button" class="bbtn" onclick="bulkAction('status_done')">✓ Исполнено</button>
+            <div class="bulk-sep"></div>
+            <button type="button" class="bbtn" onclick="bulkAction('notify_new')">📨 Уведомить</button>
+            <button type="button" class="bbtn" onclick="bulkAction('notify_remind')">🔔 Напомнить</button>
+            <button type="button" class="bbtn" onclick="bulkAction('notify_deadline')">📅 Изменение сроков</button>
+            <div class="bulk-sep"></div>
+            <button type="button" class="bbtn" onclick="bulkAction('print')">🖨️ Печать</button>
+            <button type="button" class="bbtn--x" onclick="deselectAll()">✕</button>
+        </div>
+    </div>
+
+</form>
+
+<!-- ТАБЛИЦА -->
+<div class="table-wrap">
+{% if assignments %}
+<table class="at" id="at">
+    <thead>
+        <tr>
+            <th class="col-cb"><input type="checkbox" id="check-all"></th>
+            <th class="s" onclick="sortBy('document_number')">
+                Документ <span class="sort-ic {% if current_sort == 'document_number' %}up{% elif current_sort == '-document_number' %}dn{% endif %}">
+                    {% if current_sort == 'document_number' %}▲{% elif current_sort == '-document_number' %}▼{% else %}⇅{% endif %}
+                </span>
+            </th>
+            <th>Текст поручения</th>
+            <th class="s" onclick="sortBy('executor')">
+                Исполнитель <span class="sort-ic {% if current_sort == 'executor' %}up{% elif current_sort == '-executor' %}dn{% endif %}">
+                    {% if current_sort == 'executor' %}▲{% elif current_sort == '-executor' %}▼{% else %}⇅{% endif %}
+                </span>
+            </th>
+            <th class="s" onclick="sortBy('deadline')">
+                Срок <span class="sort-ic {% if current_sort == 'deadline' %}up{% elif current_sort == '-deadline' %}dn{% endif %}">
+                    {% if current_sort == 'deadline' %}▲{% elif current_sort == '-deadline' %}▼{% else %}⇅{% endif %}
+                </span>
+            </th>
+            <th>Контролёр</th>
+            <th>Визирующий</th>
+            <th class="s" onclick="sortBy('status')">
+                Статус <span class="sort-ic">{% if current_sort == 'status' %}▲{% elif current_sort == '-status' %}▼{% else %}⇅{% endif %}</span>
+            </th>
+            <th style="width:80px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for task in assignments %}
+        <tr data-id="{{ task.id }}">
+            <td class="col-cb"><input type="checkbox" class="row-check" value="{{ task.id }}"></td>
+
+            <td>
+                <div class="doc-type">{{ task.assignment_type.name }}</div>
+                <a href="{% url 'assignments:detail' task.id %}" class="doc-num" style="text-decoration:none;color:inherit;">№ {{ task.document_number }}</a>
+                <div class="doc-date">{{ task.issue_date|date:"d.m.Y" }}</div>
+            </td>
+
+            <td class="cell-desc">
+                <div class="desc-txt">{{ task.description }}</div>
+            </td>
+
+            <td>
+                <div class="pname">
+                    {{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}.{{ task.executor.middle_name|slice:":1" }}.
+                </div>
+                <div class="pdept">{{ task.executor.department.name|default:"—" }}</div>
+            </td>
+
+            <td>
+                <div class="dl-date">{{ task.deadline|date:"d.m.Y" }}</div>
+                <div class="dl-badge {% if task.status == 'OVERDUE' or task.deadline < today %}db-ov{% elif task.deadline == today %}db-td{% elif task.deadline <= today %}db-sn{% else %}db-ok{% endif %}"
+                     data-deadline="{{ task.deadline|date:'Y-m-d' }}"></div>
+            </td>
+
+            <td>
+                {% if task.controller %}
+                <div class="pname" style="font-size:11px;">
+                    {{ task.controller.last_name }} {{ task.controller.first_name|slice:":1" }}.{{ task.controller.middle_name|slice:":1" }}.
+                </div>
+                {% else %}<span style="color:#ddd;">—</span>{% endif %}
+            </td>
+
+            <td>
+                {% if task.approver %}
+                <div class="pname" style="font-size:11px;">
+                    {{ task.approver.last_name }} {{ task.approver.first_name|slice:":1" }}.{{ task.approver.middle_name|slice:":1" }}.
+                </div>
+                {% else %}<span style="color:#ddd;">—</span>{% endif %}
+            </td>
+
+            <td>
+                <span class="sbadge s-{{ task.status }}">{{ task.get_status_display }}</span>
+            </td>
+
+            <td>
+                <div class="row-acts">
+                    <button class="rbtn" onclick="editTask({{ task.id }})">✏️</button>
+                    <button class="rbtn" onclick="printTask({{ task.id }})">🖨️</button>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="table-footer">
+    <span>Показано: <b>{{ total }}</b></span>
+    {% if f_date_to %}<span>Срок по: <b>{{ f_date_to }}</b></span>{% endif %}
+</div>
+
+{% else %}
+<div class="empty-table">
+    <div class="empty-table__icon">📭</div>
+    <div style="font-size:14px;color:#888;margin-bottom:4px;">Поручений не найдено</div>
+    <div style="font-size:12px;">Попробуйте изменить параметры фильтра</div>
+</div>
+{% endif %}
+</div>
+
+<!-- Скрытая форма для массовых действий -->
+<form method="post" action="{% url 'assignments:bulk' %}" id="bulk-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="bulk-action">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div id="bulk-ids"></div>
+</form>
+
+{% endwith %}
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+// ── Подписи дней у дедлайнов ────────────────────────────
+const today = new Date(); today.setHours(0,0,0,0);
+document.querySelectorAll('.dl-badge[data-deadline]').forEach(el => {
+    const d = new Date(el.dataset.deadline); d.setHours(0,0,0,0);
+    const diff = Math.round((d - today) / 86400000);
+    if (el.classList.contains('db-ov')) {
+        el.textContent = diff < 0 ? `просрочено ${Math.abs(diff)} дн.` : 'просрочено';
+    } else if (diff === 0) {
+        el.textContent = 'сегодня';
+    } else if (diff === 1) {
+        el.textContent = 'завтра';
+    } else {
+        el.textContent = `${diff} дн.`;
+    }
+});
+
+// ── Быстрые кнопки дат ──────────────────────────────────
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+
+function setDateTo(days) {
+    const d = new Date(); d.setDate(d.getDate() + days);
+    document.getElementById('date_to').value = isoDate(d);
+    document.getElementById('date_to').classList.add('f-active');
+    // подсветить кнопку
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('qbtn--active'));
+    event.target.classList.add('qbtn--active');
+}
+function setEndMonth() {
+    const d = new Date();
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    document.getElementById('date_to').value = isoDate(end);
+    document.getElementById('date_to').classList.add('f-active');
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('qbtn--active'));
+    event.target.classList.add('qbtn--active');
+}
+function setEndNextMonth() {
+    const d = new Date();
+    const end = new Date(d.getFullYear(), d.getMonth() + 2, 0);
+    document.getElementById('date_to').value = isoDate(end);
+    document.getElementById('date_to').classList.add('f-active');
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('qbtn--active'));
+    event.target.classList.add('qbtn--active');
+}
+function clearDates() {
+    document.getElementById('date_from').value = '';
+    document.getElementById('date_to').value = '';
+    document.getElementById('date_from').classList.remove('f-active');
+    document.getElementById('date_to').classList.remove('f-active');
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('qbtn--active'));
+}
+
+// Авто-сабмит после быстрых кнопок
+document.querySelectorAll('.qbtn:not([onclick*="clearDates"])').forEach(btn => {
+    btn.addEventListener('click', () => {
+        setTimeout(() => document.getElementById('filter-form').submit(), 50);
+    });
+});
+
+// ── Сброс отдельного фильтра ─────────────────────────────
+function clearFilter(name) {
+    const params = new URLSearchParams(window.location.search);
+    params.delete(name);
+    window.location.search = params.toString();
+}
+
+// ── Сортировка ───────────────────────────────────────────
+function sortBy(col) {
+    const params = new URLSearchParams(window.location.search);
+    const cur = params.get('sort') || '';
+    params.set('sort', cur === col ? '-' + col : col);
+    window.location.search = params.toString();
+}
+
+// ── Чекбоксы ────────────────────────────────────────────
+const checkAll  = document.getElementById('check-all');
+const bulkBar   = document.getElementById('bulk-bar');
+const bulkCount = document.getElementById('bulk-count');
+
+function getChecked() {
+    return [...document.querySelectorAll('.row-check:checked')].map(c => c.value);
+}
+function updateBulk() {
+    const ids = getChecked();
+    bulkBar.classList.toggle('visible', ids.length > 0);
+    bulkCount.textContent = ids.length;
+    document.querySelectorAll('.row-check').forEach(cb => {
+        cb.closest('tr').classList.toggle('sel', cb.checked);
+    });
+}
+
+if (checkAll) {
+    checkAll.addEventListener('change', () => {
+        document.querySelectorAll('.row-check').forEach(cb => cb.checked = checkAll.checked);
+        updateBulk();
+    });
+}
+document.querySelectorAll('.row-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+        const all = [...document.querySelectorAll('.row-check')];
+        checkAll.indeterminate = all.some(c=>c.checked) && !all.every(c=>c.checked);
+        checkAll.checked = all.every(c=>c.checked);
+        updateBulk();
+    });
+});
+function deselectAll() {
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = false);
+    checkAll.checked = false; checkAll.indeterminate = false;
+    updateBulk();
+}
+
+// ── Массовые действия ────────────────────────────────────
+function bulkAction(action) {
+    const ids = getChecked();
+    if (!ids.length) return;
+    document.getElementById('bulk-action').value = action;
+    const c = document.getElementById('bulk-ids');
+    c.innerHTML = ids.map(id => `<input type="hidden" name="ids" value="${id}">`).join('');
+    document.getElementById('bulk-form').submit();
+}
+
+// ── Действия в строке ────────────────────────────────────
+function editTask(id)  { window.location.href = `/assignments/${id}/edit/`; }
+function printTask(id) { window.open(`/reports/print-selected/?ids=${id}`, '_blank'); }
+
+// ── Авто-поиск ───────────────────────────────────────────
+let searchTimer;
+document.getElementById('search-input')?.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => document.getElementById('filter-form').submit(), 500);
+});
+</script>
+{% endblock %}

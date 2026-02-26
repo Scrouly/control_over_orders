@@ -1,0 +1,434 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}Виды поручений{% endblock %}
+{% block breadcrumb %}
+<span class="sep">›</span><span class="current">Справочники</span>
+{% endblock %}
+
+{% block extra_css %}
+.content { background: #f5f5f3; }
+
+.tabs { display:flex; background:#fff; border-bottom:2px solid #eee; margin:-24px -24px 24px; padding:0 24px; }
+.tab  { padding:15px 20px; font-size:13px; font-weight:700; color:#bbb; text-decoration:none;
+        border-bottom:2px solid transparent; margin-bottom:-2px; display:flex; align-items:center; gap:7px;
+        transition:color .13s, border-color .13s; white-space:nowrap; font-family:var(--font-b); }
+.tab:hover { color:#555; }
+.tab.on { color:#111; border-bottom-color:#111; }
+.tab-n { font-size:10px; font-weight:700; padding:0 6px; height:18px; line-height:18px;
+         border-radius:9px; background:#111; color:#fff; }
+.tab:not(.on) .tab-n { background:#e8e8e4; color:#777; }
+
+/* Поиск */
+.search-row { position:relative; margin-bottom:12px; }
+.search-row input { width:100%; padding:10px 16px 10px 40px; border:1px solid #e8e8e4; background:#fff; font-family:var(--font-b); font-size:13.5px; color:#111; outline:none; box-sizing:border-box; transition:border-color .15s, box-shadow .15s; }
+.search-row input:focus { border-color:#4f8ef7; box-shadow:0 0 0 3px rgba(79,142,247,.1); }
+.search-row input::placeholder { color:#ccc; }
+.search-row__icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#ccc; font-size:15px; pointer-events:none; }
+.search-row__hint { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:11px; color:#ddd; pointer-events:none; }
+
+/* Добавление */
+.add-row { background:#fff; border:1px solid #e8e8e4; margin-bottom:4px; }
+.add-row__top { display:flex; align-items:center; }
+.add-row__lbl { padding:0 14px; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:#ccc; flex-shrink:0; }
+.add-row__sep { width:1px; height:20px; background:#eee; flex-shrink:0; }
+.add-row__inp { flex:1; padding:11px 14px; border:none; outline:none; font-family:var(--font-b); font-size:13.5px; color:#111; background:transparent; }
+.add-row__inp::placeholder { color:#ccc; }
+.add-row__btn { padding:0 18px; height:44px; background:var(--dark); color:#fff; border:none; font-family:var(--font-b); font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0; transition:opacity .12s; }
+.add-row__btn:hover { opacity:.85; }
+.add-row__colors { padding:10px 14px; border-top:1px solid #f4f4f2; display:flex; align-items:center; gap:10px; }
+.add-row__clbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:#bbb; }
+
+/* Свотчи */
+.swatches { display:flex; gap:6px; flex-wrap:wrap; }
+.sw { width:22px; height:22px; border-radius:50%; cursor:pointer; border:3px solid transparent; box-sizing:border-box; transition:transform .12s, box-shadow .12s; flex-shrink:0; }
+.sw:hover { transform:scale(1.2); }
+.sw.on { box-shadow:0 0 0 2px #fff, 0 0 0 4px #111; transform:scale(1.1); }
+
+/* Таблица */
+.ref-list { background:#fff; border:1px solid #e8e8e4; margin-top:4px; }
+.ref-list__header { display:grid; grid-template-columns:36px 1fr 100px 120px 130px; padding:8px 16px; background:#fafaf8; border-bottom:2px solid #f0f0ee; gap:0; }
+.ref-list__hcell { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#ccc; }
+.ref-list__hcell.c { text-align:center; }
+
+.ref-row { display:grid; grid-template-columns:36px 1fr 100px 120px 130px; border-bottom:1px solid #f6f6f4; min-height:56px; align-items:center; transition:background .1s; position:relative; }
+.ref-row:last-child { border-bottom:none; }
+.ref-row:hover { background:#fafaf8; }
+.ref-row.is-editing { background:#f0f4ff; }
+
+/* Цветовой маркер */
+.cell-dot { padding:0 0 0 16px; display:flex; align-items:center; }
+.color-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; transition:transform .15s; }
+.color-dot:hover { transform:scale(1.3); cursor:pointer; }
+
+/* Свотчи редактирования — под строкой */
+.edit-color-panel {
+    display:none;
+    position:absolute; left:0; right:0; top:100%;
+    background:#fff; border:1px solid #e0e0dc; border-top:2px solid #4f8ef7;
+    padding:12px 16px; z-index:10;
+    box-shadow:0 4px 16px rgba(0,0,0,.1);
+    align-items:center; gap:10px;
+}
+.edit-color-panel.vis { display:flex; }
+.edit-color-panel__lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:#bbb; white-space:nowrap; flex-shrink:0; }
+
+/* Название */
+.cell-name { padding:0 12px 0 8px; overflow:hidden; }
+.name-display { font-size:13.5px; font-weight:700; color:#111; cursor:pointer; padding:3px 6px; margin:-3px -6px; display:inline-block; border:1px solid transparent; border-radius:2px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:border-color .12s, background .12s; }
+.name-display:hover { border-color:#e0e0dc; background:#fff; }
+.name-input { display:none; width:100%; padding:6px 8px; border:1.5px solid #4f8ef7; outline:none; font-family:var(--font-h); font-size:13.5px; font-weight:700; color:#111; background:#fff; box-shadow:0 0 0 3px rgba(79,142,247,.12); box-sizing:border-box; }
+
+/* Прогресс активных */
+.cell-prog { padding:0 8px; }
+.prog-track { height:4px; background:#f0f0ee; border-radius:2px; overflow:hidden; }
+.prog-fill  { height:100%; border-radius:2px; }
+.prog-txt   { font-size:10px; color:#aaa; margin-top:3px; white-space:nowrap; }
+
+/* Статы */
+.cell-stat { display:flex; justify-content:center; }
+.stat-pill { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border:1px solid #eee; background:#fafaf8; text-decoration:none; color:inherit; transition:background .12s, border-color .12s; cursor:pointer; white-space:nowrap; }
+.stat-pill:hover { background:#eef3ff; border-color:#c5d8ff; }
+.stat-pill__n { font-family:var(--font-h); font-size:15px; font-weight:700; color:#111; line-height:1; }
+.stat-pill__lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#aaa; }
+.stat-pill:hover .stat-pill__n { color:#1a56db; }
+.stat-pill:hover .stat-pill__lbl { color:#4f8ef7; }
+.stat-pill--zero { opacity:.4; pointer-events:none; }
+.stat-pill--zero .stat-pill__n { color:#bbb; }
+
+/* Действия */
+.cell-actions { padding:0 12px 0 0; display:flex; gap:5px; justify-content:flex-end; align-items:center; }
+.act { padding:5px 10px; font-family:var(--font-b); font-size:11px; font-weight:700; border:1px solid #e8e8e4; background:#fff; color:#777; cursor:pointer; transition:all .12s; white-space:nowrap; display:inline-flex; align-items:center; gap:4px; }
+.act:hover { background:var(--dark); color:#fff; border-color:var(--dark); }
+.act-save { background:#4f8ef7; border-color:#4f8ef7; color:#fff; display:none; }
+.act-save:hover { background:#2563eb; border-color:#2563eb; }
+.act-cancel { display:none; }
+.act-del:hover { background:#c0392b; border-color:#c0392b; }
+
+.empty { padding:48px; text-align:center; color:#ccc; font-size:13px; }
+.no-results { display:none; padding:32px; text-align:center; color:#ccc; font-size:13px; }
+.no-results.vis { display:block; }
+
+.toast { position:fixed; bottom:24px; right:24px; padding:11px 18px; font-weight:700; font-size:12.5px; font-family:var(--font-b); color:#fff; background:#111; box-shadow:0 4px 16px rgba(0,0,0,.2); z-index:9999; opacity:0; transform:translateY(12px); transition:opacity .2s, transform .2s; pointer-events:none; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast--ok    { background:#2e7d32; }
+.toast--error { background:#c0392b; }
+
+.modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:600; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .18s; }
+.modal-bg.open { opacity:1; pointer-events:all; }
+.modal { background:#fff; padding:28px; width:360px; max-width:90%; box-shadow:0 16px 48px rgba(0,0,0,.2); transform:translateY(8px) scale(.97); transition:transform .2s; }
+.modal-bg.open .modal { transform:none; }
+.modal h3 { font-family:var(--font-h); font-size:18px; font-weight:700; margin:0 0 10px; }
+.modal p  { font-size:13px; color:#666; margin:0 0 22px; line-height:1.6; }
+.modal-btns { display:flex; gap:8px; justify-content:flex-end; }
+.btn-del-confirm { padding:8px 20px; background:#c0392b; color:#fff; border:none; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--font-b); }
+{% endblock %}
+
+{% block topbar_actions %}{% endblock %}
+
+{% block content %}
+<nav class="tabs">
+    <a href="{% url 'references:departments' %}" class="tab">Подразделения</a>
+    <a href="{% url 'references:positions' %}"   class="tab">Должности</a>
+    <a href="{% url 'references:types' %}"       class="tab on">Виды поручений <span class="tab-n">{{ types.count }}</span></a>
+</nav>
+
+<div class="page-header" style="margin-bottom:16px;">
+    <h1 class="page-title">Виды поручений</h1>
+    <div class="page-subtitle">Кликните название для переименования. Цифры ведут к поручениям.</div>
+</div>
+
+<div class="search-row">
+    <span class="search-row__icon">⌕</span>
+    <input id="q" type="text" placeholder="Поиск вида поручения…"
+           oninput="filterRows(this.value)"
+           onkeydown="if(event.key==='Escape'){this.value='';filterRows('');}">
+    <span class="search-row__hint">/ для фокуса · Esc сброс</span>
+</div>
+
+{% if is_admin %}
+<form method="post" id="add-form">
+    {% csrf_token %}
+    <div class="add-row">
+        <div class="add-row__top">
+            <span class="add-row__lbl">+ Новый</span>
+            <div class="add-row__sep"></div>
+            <input name="name" class="add-row__inp" id="add-inp" placeholder="Название вида поручения…" autocomplete="off" required>
+            <button type="submit" class="add-row__btn">Добавить</button>
+        </div>
+        <div class="add-row__colors">
+            <span class="add-row__clbl">Цвет:</span>
+            <div class="swatches" id="add-sw">
+                {% for color in colors %}
+                <div class="sw {% if forloop.first %}on{% endif %}"
+                     style="background:{{ color }};" data-color="{{ color }}"
+                     onclick="pickAddColor(this)"></div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="color" id="add-color" value="{{ colors.0 }}">
+        </div>
+    </div>
+</form>
+{% endif %}
+
+<div class="ref-list" id="ref-list">
+    <div class="ref-list__header">
+        <div class="ref-list__hcell"></div>
+        <div class="ref-list__hcell">Название</div>
+        <div class="ref-list__hcell c">Всего</div>
+        <div class="ref-list__hcell c">Активных</div>
+        <div class="ref-list__hcell"></div>
+    </div>
+
+    {% for t in types %}
+    <div class="ref-row" id="row-{{ t.id }}" data-name="{{ t.name|lower }}">
+
+        <!-- Цвет -->
+        <div class="cell-dot">
+            <div class="color-dot" id="dot-{{ t.id }}"
+                 style="background:{{ t.color|default:'#ccc' }};"
+                 {% if is_admin %}onclick="startEdit({{ t.id }})" title="Нажмите чтобы изменить"{% endif %}></div>
+        </div>
+
+        <!-- Название -->
+        <div class="cell-name">
+            <span class="name-display" id="nd-{{ t.id }}"
+                  {% if is_admin %}onclick="startEdit({{ t.id }})" title="Нажмите для переименования"{% endif %}>
+                {{ t.name }}
+            </span>
+            <input class="name-input" id="ni-{{ t.id }}" value="{{ t.name }}"
+                   onkeydown="onKey(event,{{ t.id }})">
+            <!-- Панель выбора цвета при редактировании -->
+            <div class="edit-color-panel" id="ecp-{{ t.id }}">
+                <span class="edit-color-panel__lbl">Цвет:</span>
+                <div class="swatches" id="esw-{{ t.id }}">
+                    {% for color in colors %}
+                    <div class="sw {% if color == t.color %}on{% endif %}"
+                         style="background:{{ color }};" data-color="{{ color }}" data-tid="{{ t.id }}"
+                         onmousedown="event.preventDefault()"
+                         onclick="pickEditColor(this)"></div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Всего поручений -->
+        <div class="cell-stat">
+            {% if t.total %}
+            <a class="stat-pill" href="{% url 'assignments:list' %}?atype={{ t.id }}" title="Все поручения этого вида">
+                <span class="stat-pill__n">{{ t.total }}</span>
+                <span class="stat-pill__lbl">всего</span>
+            </a>
+            {% else %}
+            <span class="stat-pill stat-pill--zero">
+                <span class="stat-pill__n">0</span>
+                <span class="stat-pill__lbl">всего</span>
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Активных -->
+        <div class="cell-stat">
+            {% if t.active %}
+            <a class="stat-pill" href="{% url 'assignments:list' %}?atype={{ t.id }}&status=active" title="Активные поручения этого вида">
+                <span class="stat-pill__n">{{ t.active }}</span>
+                <span class="stat-pill__lbl">актив.</span>
+            </a>
+            {% else %}
+            <span class="stat-pill stat-pill--zero">
+                <span class="stat-pill__n">0</span>
+                <span class="stat-pill__lbl">актив.</span>
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Действия -->
+        <div class="cell-actions" id="ca-{{ t.id }}">
+            {% if is_admin %}
+            <button class="act act-edit"   id="ae-{{ t.id }}" onclick="startEdit({{ t.id }})">✏ Изменить</button>
+            <button class="act act-save"   id="as-{{ t.id }}" onclick="saveEdit({{ t.id }})">✓ Сохранить</button>
+            <button class="act act-cancel" id="ac-{{ t.id }}" onclick="cancelEdit({{ t.id }})">✕</button>
+            <button class="act act-del"    onclick="askDel({{ t.id }},'{{ t.name|escapejs }}',{{ t.total }})">🗑</button>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty">Видов поручений пока нет — добавьте первый</div>
+    {% endfor %}
+
+    <div class="no-results" id="no-res">Ничего не найдено</div>
+</div>
+
+<div class="modal-bg" id="modal">
+    <div class="modal">
+        <h3 id="m-ttl"></h3>
+        <p  id="m-txt"></p>
+        <div class="modal-btns">
+            <button class="act" onclick="closeModal()">Отмена</button>
+            <button class="btn-del-confirm" id="m-ok">Удалить</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+let active = null;
+const editColors = {};
+
+// ── Закрыть редактирование при клике вне ─────────────
+document.addEventListener('click', e => {
+    if (active && !document.getElementById('row-' + active)?.contains(e.target))
+        cancelEdit(active);
+});
+
+// ── Цвет при добавлении ──────────────────────────────
+function pickAddColor(el) {
+    document.querySelectorAll('#add-sw .sw').forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
+    document.getElementById('add-color').value = el.dataset.color;
+}
+
+// ── Цвет при редактировании ──────────────────────────
+function pickEditColor(el) {
+    const id = el.dataset.tid;
+    document.querySelectorAll('#esw-' + id + ' .sw').forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
+    editColors[id] = el.dataset.color;
+    // Живое обновление маркера
+    document.getElementById('dot-' + id).style.background = el.dataset.color;
+}
+
+// ── Редактирование ───────────────────────────────────
+function startEdit(id) {
+    if (active && active !== id) cancelEdit(active);
+    active = id;
+    editColors[id] = document.getElementById('dot-' + id).style.background;
+
+    const row = document.getElementById('row-' + id);
+    row.classList.add('is-editing');
+
+    document.getElementById('nd-' + id).style.display = 'none';
+    const inp = document.getElementById('ni-' + id);
+    inp.style.display = 'block'; inp.focus(); inp.select();
+
+    document.getElementById('ecp-' + id).classList.add('vis');
+    document.getElementById('ae-' + id).style.display = 'none';
+    document.getElementById('as-' + id).style.display = 'inline-flex';
+    document.getElementById('ac-' + id).style.display = 'inline-flex';
+}
+
+function cancelEdit(id) {
+    if (active === id) active = null;
+    const row = document.getElementById('row-' + id);
+    row.classList.remove('is-editing');
+
+    // Откатить цвет к текущему сохранённому значению в свотчах
+    const savedSwatch = document.querySelector('#esw-' + id + ' .sw.on');
+    if (savedSwatch) document.getElementById('dot-' + id).style.background = savedSwatch.dataset.color;
+
+    document.getElementById('ni-' + id).style.display = 'none';
+    document.getElementById('ni-' + id).value = document.getElementById('nd-' + id).textContent.trim();
+    document.getElementById('nd-' + id).style.display = '';
+    document.getElementById('ecp-' + id).classList.remove('vis');
+    document.getElementById('ae-' + id).style.display = '';
+    document.getElementById('as-' + id).style.display = 'none';
+    document.getElementById('ac-' + id).style.display = 'none';
+}
+
+function onKey(e, id) {
+    if (e.key === 'Enter')  { e.preventDefault(); saveEdit(id); }
+    if (e.key === 'Escape') { e.preventDefault(); cancelEdit(id); }
+}
+
+async function saveEdit(id) {
+    const inp   = document.getElementById('ni-' + id);
+    const name  = inp.value.trim();
+    const color = editColors[id] || '';
+    if (!name) { showToast('Название не может быть пустым', 'error'); return; }
+
+    const btn = document.getElementById('as-' + id);
+    btn.textContent = '…'; btn.disabled = true;
+
+    try {
+        const url = '{% url "references:type_update" 0 %}'.replace('/0/', '/' + id + '/');
+        const r   = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ name, color }),
+        });
+        const d = await r.json();
+        if (!r.ok) { showToast(d.error || 'Ошибка', 'error'); btn.textContent = '✓ Сохранить'; btn.disabled = false; return; }
+        // Обновляем отображение
+        document.getElementById('nd-' + id).textContent = d.name;
+        document.getElementById('row-' + id).dataset.name = d.name.toLowerCase();
+        // Фиксируем новый цвет в свотчах
+        if (color) {
+            document.querySelectorAll('#esw-' + id + ' .sw').forEach(s => s.classList.toggle('on', s.dataset.color === color));
+        }
+        cancelEdit(id);
+        showToast('Сохранено', 'ok');
+    } catch {
+        showToast('Ошибка соединения', 'error');
+        btn.textContent = '✓ Сохранить'; btn.disabled = false;
+    }
+}
+
+// ── Удаление ──────────────────────────────────────────
+let delId = null;
+function askDel(id, name, total) {
+    delId = id;
+    document.getElementById('m-ttl').textContent = 'Удалить «' + name + '»?';
+    if (total > 0) {
+        document.getElementById('m-txt').innerHTML = '<b>' + total + ' поручений</b> используют этот вид.<br>Сначала смените им тип.';
+        document.getElementById('m-ok').style.display = 'none';
+    } else {
+        document.getElementById('m-txt').textContent = 'Вид поручения будет удалён безвозвратно.';
+        document.getElementById('m-ok').style.display = '';
+    }
+    document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); delId = null; }
+document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('m-ok').onclick = async () => {
+    if (!delId) return;
+    const url = '{% url "references:type_delete" 0 %}'.replace('/0/', '/' + delId + '/');
+    const r   = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+    const d   = await r.json();
+    if (!r.ok) { showToast(d.error || 'Ошибка', 'error'); closeModal(); return; }
+    const row = document.getElementById('row-' + delId);
+    row.style.transition = 'opacity .2s'; row.style.opacity = '0';
+    setTimeout(() => row.remove(), 220);
+    closeModal(); showToast('Удалено', 'ok');
+};
+
+// ── Поиск ──────────────────────────────────────────────
+function filterRows(q) {
+    const lq = q.trim().toLowerCase();
+    let vis = 0;
+    document.querySelectorAll('.ref-row').forEach(r => {
+        const show = !lq || r.dataset.name.includes(lq);
+        r.style.display = show ? '' : 'none';
+        if (show) vis++;
+    });
+    document.getElementById('no-res').classList.toggle('vis', vis === 0 && !!lq);
+}
+
+// ── Toast ───────────────────────────────────────────────
+let _t;
+function showToast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    el.textContent = (type === 'ok' ? '✓ ' : '✕ ') + msg;
+    el.className = 'toast toast--' + type;
+    requestAnimationFrame(() => el.classList.add('show'));
+    clearTimeout(_t); _t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+document.addEventListener('keydown', e => {
+    if (e.key === '/' && !e.target.closest('input,textarea')) {
+        e.preventDefault(); document.getElementById('q').focus();
+    }
+});
+</script>
+{% endblock %}

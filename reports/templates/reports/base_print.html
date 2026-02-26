@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Печать{% endblock %}</title>
+    <style>
+        /* --- ИМПОРТ ШРИФТОВ --- */
+        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=PT+Sans:wght@400;700&display=swap');
+
+        /* --- ПЕРЕМЕННЫЕ --- */
+        :root {
+            --color-black:   #0d0d0d;
+            --color-dark:    #1a1a2e;
+            --color-accent:  #1a1a2e;
+            --color-rule:    #000;
+            --color-muted:   #555;
+            --color-light:   #f0f0ee;
+            --color-border:  #bbb;
+            --color-bg:      #e8e8e4;
+            --font-head:     'PT Serif', Georgia, serif;
+            --font-body:     'PT Sans', Helvetica, Arial, sans-serif;
+        }
+
+        /* --- ГЛОБАЛЬНЫЕ НАСТРОЙКИ --- */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-body);
+            font-size: 11px;
+            color: var(--color-black);
+            line-height: 1.4;
+            background-color: var(--color-bg);
+            padding: 24px 16px;
+        }
+
+        /* --- ЛИСТ БУМАГИ --- */
+        .page-sheet {
+            background: #fff;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 14mm 12mm 12mm;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08);
+            min-height: 285mm;
+            position: relative;
+        }
+
+        /* --- КНОПКА ПЕЧАТИ --- */
+        .btn-print {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 13px 26px;
+            background: var(--color-dark);
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            z-index: 999;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+        }
+        .btn-print:hover {
+            background: #000;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+        }
+        .btn-print:active { transform: translateY(0); }
+
+        /* --- ШАПКА ДОКУМЕНТА --- */
+        .header-block {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            border-bottom: 2.5px solid var(--color-rule);
+            gap: 16px;
+        }
+        .header-block--compact {
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+            border-bottom-width: 1.5px;
+        }
+
+        .company-title {
+            font-family: var(--font-head);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--color-black);
+            line-height: 1.2;
+        }
+        .company-subtitle {
+            font-size: 9px;
+            color: var(--color-muted);
+            margin-top: 2px;
+            letter-spacing: 0.03em;
+        }
+
+        .doc-meta {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .doc-meta__title {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .doc-meta__title--large {
+            font-size: 15px;
+            letter-spacing: 0.05em;
+        }
+        .doc-meta__subtitle {
+            font-size: 9px;
+            color: var(--color-muted);
+            margin-top: 3px;
+        }
+
+        /* --- КАРТОЧКА СОТРУДНИКА --- */
+        .employee-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-light);
+            border-left: 4px solid var(--color-accent);
+            padding: 7px 12px;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+        .employee-card--compact { margin-bottom: 8px; padding: 5px 10px; }
+
+        .emp-label {
+            font-size: 7.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-muted);
+            margin-bottom: 2px;
+        }
+        .emp-name {
+            font-family: var(--font-head);
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-black);
+            line-height: 1.2;
+        }
+        .emp-name--small { font-size: 10px; }
+        .emp-info {
+            text-align: right;
+            flex-shrink: 0;
+            max-width: 55%;
+        }
+        .emp-detail {
+            font-size: 8.5px;
+            color: var(--color-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 1px;
+        }
+
+        /* --- ТАБЛИЦА --- */
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            table-layout: fixed;
+        }
+
+        .task-table thead tr {
+            background-color: var(--color-dark);
+        }
+        .task-table th {
+            text-align: left;
+            padding: 6px 7px;
+            color: #fff;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 7.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .task-table tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        .task-table tbody tr:hover {
+            background-color: #f5f3ee;
+        }
+
+        .task-table td {
+            padding: 9px 7px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+            height: 1px;
+            overflow-wrap: break-word;
+        }
+        .task-table tbody tr:last-child td {
+            border-bottom: 2px solid var(--color-rule);
+        }
+
+        /* --- ШИРИНА КОЛОНОК --- */
+        .col-doc   { width: 19%; }
+        .col-desc  { width: 35%; }
+        .col-dates { width: 13%; }
+        .col-sign  {
+            width: 16.5%;
+            border-left: 1px solid #ddd;
+        }
+
+        td.col-sign {
+            position: relative;
+            padding-bottom: 32px;
+        }
+        th.col-sign {
+            border-left: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* --- НОМЕР ДОКУМЕНТА --- */
+        .assignment-type-name {
+            hyphens: auto;
+            overflow-wrap: break-word;
+            word-break: normal;
+            font-size: 9px;
+            color: var(--color-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .doc-num {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 0;
+            letter-spacing: 0.02em;
+        }
+
+        /* --- ДАТЫ --- */
+        .dates-label {
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            color: var(--color-muted);
+            margin-bottom: 1px;
+        }
+        .dates-gap { margin-top: 7px; }
+
+        .issue-date {
+            font-size: 10px;
+            color: var(--color-black);
+        }
+
+        .deadline-box {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 11px;
+            border: 1.5px solid var(--color-rule);
+            padding: 2px 5px;
+            display: inline-block;
+            margin-top: 3px;
+            background: #fff;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        /* --- ПОДПИСЬ --- */
+        .sign-wrapper {
+            display: block;
+            height: 100%;
+            min-height: 75px;
+        }
+        .sign-label {
+            font-size: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--color-muted);
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+        .sign-name {
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 9.5px;
+            margin-bottom: 4px;
+            line-height: 1.25;
+        }
+        .sign-name--empty {
+            color: #bbb;
+            font-weight: 400;
+            font-style: italic;
+        }
+        .write-line {
+            position: absolute;
+            bottom: 8px;
+            left: 7px;
+            right: 7px;
+            border-top: 1px solid #888;
+            padding-top: 2px;
+            font-size: 6.5px;
+            color: var(--color-muted);
+            text-align: center;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        /* --- ЛИНИЯ ОТРЕЗА --- */
+        .cut-separator {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            gap: 0;
+            color: var(--color-muted);
+        }
+        .cut-separator::before,
+        .cut-separator::after {
+            content: '';
+            flex: 1;
+            border-top: 1.5px dashed #aaa;
+        }
+        .cut-icon {
+            padding: 0 10px;
+            font-size: 16px;
+            line-height: 1;
+            user-select: none;
+            color: #888;
+        }
+        .cut-label {
+            font-size: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #aaa;
+            padding: 0 6px;
+        }
+
+        /* --- НАСТРОЙКИ ПЕЧАТИ --- */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 8mm 6mm;
+            }
+
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                width: 100%;
+            }
+
+            .page-sheet {
+                box-shadow: none;
+                padding: 0;
+                min-height: unset;
+                max-width: 100%;
+            }
+
+            .no-print { display: none !important; }
+
+            .task-container { page-break-inside: avoid; }
+            tr { page-break-inside: avoid; }
+
+            /* В печати убираем hover-эффект */
+            .task-table tbody tr:hover { background-color: transparent; }
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.print()" class="btn-print no-print">🖨️&nbsp; Печать</button>
+
+    <div class="page-sheet">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

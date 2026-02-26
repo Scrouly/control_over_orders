@@ -1,0 +1,46 @@
+{# reports/_task_row.html — подключается через {% include %} в print_report.html и cuttable_report.html #}
+<tr>
+    <td class="col-doc">
+        <span class="assignment-type-name" lang="ru">{{ task.assignment_type.name }}</span>
+        <span class="doc-num">№&nbsp;{{ task.document_number }}</span>
+    </td>
+
+    <td class="col-desc">{{ task.description|linebreaksbr }}</td>
+
+    <td class="col-dates">
+        <div class="dates-label">Дата выдачи:</div>
+        <div class="issue-date">{{ task.issue_date|date:"d.m.Y" }}</div>
+        <div class="dates-gap">
+            <div class="dates-label">Дата исполнения:</div>
+            <div class="deadline-box">{{ task.deadline|date:"d.m.Y" }}</div>
+        </div>
+    </td>
+
+    <td class="col-sign col-sign--control">
+        <div class="sign-wrapper">
+            <div class="sign-label">Контролирующий</div>
+            <div class="sign-name">
+                {% if task.controller %}
+                    {{ task.controller.last_name }}&nbsp;{{ task.controller.first_name|slice:":1" }}.{% if task.controller.middle_name %}{{ task.controller.middle_name|slice:":1" }}.{% endif %}
+                {% else %}
+                    <span class="sign-name--empty">не назначен</span>
+                {% endif %}
+            </div>
+            <div class="write-line">Подпись</div>
+        </div>
+    </td>
+
+    <td class="col-sign col-sign--approval">
+        <div class="sign-wrapper">
+            <div class="sign-label">Визирующий</div>
+            <div class="sign-name">
+                {% if task.approver %}
+                    {{ task.approver.last_name }}&nbsp;{{ task.approver.first_name|slice:":1" }}.{% if task.approver.middle_name %}{{ task.approver.middle_name|slice:":1" }}.{% endif %}
+                {% else %}
+                    <span class="sign-name--empty">не назначен</span>
+                {% endif %}
+            </div>
+            <div class="write-line">Подпись</div>
+        </div>
+    </td>
+</tr>

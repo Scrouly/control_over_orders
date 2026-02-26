@@ -1,0 +1,334 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}№ {{ task.document_number }}{% endblock %}
+{% block breadcrumb %}
+<span class="sep">›</span><a href="{% url 'assignments:list' %}">Поручения</a>
+<span class="sep">›</span><span class="current">№ {{ task.document_number }}</span>
+{% endblock %}
+
+{% block extra_css %}
+.content { background: #f5f5f3; }
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 1000px) { .detail-grid { grid-template-columns: 1fr; } }
+
+.panel { background: #fff; border: 1px solid #e8e8e4; overflow: hidden; }
+.panel__head {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0ee;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.panel__title { font-family: var(--font-h); font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
+.panel__body  { padding: 20px; }
+
+/* Шапка поручения */
+.task-header {
+    background: #fff;
+    border: 1px solid #e8e8e4;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.task-header__left {}
+.task-eyebrow { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #aaa; margin-bottom: 4px; }
+.task-num { font-family: var(--font-h); font-size: 26px; font-weight: 700; color: #111; }
+.task-type { font-size: 12px; color: #888; margin-top: 4px; }
+.task-header__right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Статус-бейдж (кликабельный) */
+.status-pill {
+    display: inline-block;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: opacity .15s;
+}
+.status-pill:hover { opacity: .8; }
+.sp-NEW         { background: #e3f2fd; color: #1565c0; border-color: #bbdefb; }
+.sp-IN_PROGRESS { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+.sp-OVERDUE     { background: #fde8e8; color: #c0392b; border-color: #ffcdd2; }
+.sp-DONE        { background: #f3f3f3; color: #777;    border-color: #e0e0e0; }
+
+/* Поля */
+.field-row { display: grid; grid-template-columns: 160px 1fr; gap: 8px 16px; padding: 11px 0; border-bottom: 1px solid #f4f4f2; align-items: start; }
+.field-row:last-child { border-bottom: none; }
+.field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #aaa; padding-top: 2px; }
+.field-value { font-size: 13px; color: #111; line-height: 1.5; }
+.field-value--large { font-size: 14px; line-height: 1.6; }
+
+/* Срок */
+.deadline-block { display: flex; align-items: center; gap: 10px; }
+.deadline-num { font-family: var(--font-h); font-size: 20px; font-weight: 700; }
+.deadline-chip { padding: 3px 10px; font-size: 10px; font-weight: 700; border-radius: 1px; }
+.dc-ov { background: #fde8e8; color: #c0392b; }
+.dc-td { background: #fff3e0; color: #904000; }
+.dc-ok { background: #e8f5e9; color: #2e7d32; }
+.dc-gr { background: #f3f3f3; color: #777; }
+
+/* Сотрудник-блок */
+.emp-block { display: flex; align-items: center; gap: 12px; }
+.emp-avatar {
+    width: 38px; height: 38px;
+    background: var(--dark);
+    color: #fff;
+    font-family: var(--font-h);
+    font-weight: 700;
+    font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+.emp-name { font-weight: 700; font-size: 13px; }
+.emp-meta { font-size: 11px; color: #aaa; margin-top: 1px; }
+.tg-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: #0088cc; margin-top: 3px; }
+
+/* Боковые кнопки */
+.side-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    font-family: var(--font-b);
+    font-size: 12.5px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background .12s;
+    border-bottom: 1px solid #f4f4f2;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+}
+.side-btn:last-child { border-bottom: none; }
+.side-btn:hover { background: #fafaf8; }
+.side-btn__icon { font-size: 16px; width: 22px; text-align: center; }
+.side-btn--danger { color: #c0392b; }
+.side-btn--danger:hover { background: #fde8e8; }
+
+/* Смена статуса (inline форма) */
+.status-form { padding: 16px; border-top: 1px solid #f0f0ee; background: #fafaf8; display: none; }
+.status-form.open { display: block; }
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'assignments:edit' task.pk %}" class="btn btn--outline btn--sm">✏️ Редактировать</a>
+<a href="{% url 'assignments:list' %}"          class="btn btn--ghost  btn--sm">← Назад</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Шапка -->
+<div class="task-header">
+    <div class="task-header__left">
+        <div class="task-eyebrow">{{ task.assignment_type.name }} · выдано {{ task.issue_date|date:"d.m.Y" }}</div>
+        <div class="task-num">№ {{ task.document_number }}</div>
+    </div>
+    <div class="task-header__right">
+        <span class="status-pill sp-{{ task.status }}" onclick="toggleStatusForm()">
+            {{ task.get_status_display }} ▾
+        </span>
+        <a href="{% url 'assignments:edit' task.pk %}" class="btn btn--outline btn--sm">✏️ Редактировать</a>
+    </div>
+</div>
+
+<!-- Форма смены статуса (скрыта по умолчанию) -->
+<div id="status-form-wrap" style="margin-bottom:16px; display:none;">
+    <div style="background:#fff; border:1px solid #e8e8e4; padding:16px 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#aaa;">Изменить статус:</span>
+        <form method="post" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            {% csrf_token %}
+            <input type="hidden" name="change_status" value="1">
+            <select name="status" class="form-control" style="min-width:180px; padding:6px 10px;">
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if task.status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn--primary btn--sm">Сохранить</button>
+            <button type="button" class="btn btn--ghost btn--sm" onclick="toggleStatusForm()">Отмена</button>
+        </form>
+    </div>
+</div>
+
+<div class="detail-grid">
+
+    <!-- ══ ЛЕВАЯ КОЛОНКА ══ -->
+    <div>
+
+        <!-- Основные реквизиты -->
+        <div class="panel" style="margin-bottom:16px;">
+            <div class="panel__head">
+                <div class="panel__title">Реквизиты поручения</div>
+            </div>
+            <div class="panel__body">
+
+                <div class="field-row">
+                    <div class="field-label">Текст поручения</div>
+                    <div class="field-value field-value--large">{{ task.description }}</div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Срок исполнения</div>
+                    <div class="field-value">
+                        <div class="deadline-block">
+                            <div class="deadline-num">{{ task.deadline|date:"d.m.Y" }}</div>
+                            <span class="deadline-chip
+                                {% if task.status == 'OVERDUE' or task.deadline < today %}dc-ov
+                                {% elif task.deadline == today %}dc-td
+                                {% elif days_left <= 7 %}dc-ok
+                                {% else %}dc-gr{% endif %}">
+                                {% if task.status == 'OVERDUE' %}просрочено {{ days_overdue }} дн.
+                                {% elif task.deadline == today %}сегодня
+                                {% elif days_left == 1 %}завтра
+                                {% elif days_left > 0 %}{{ days_left }} дн.
+                                {% else %}просрочено{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Исполнитель</div>
+                    <div class="field-value">
+                        <div class="emp-block">
+                            <div class="emp-avatar">{{ task.executor.last_name|slice:":1" }}</div>
+                            <div>
+                                <div class="emp-name">{{ task.executor.last_name }} {{ task.executor.first_name }} {{ task.executor.middle_name }}</div>
+                                <div class="emp-meta">{{ task.executor.position.name|default:"—" }} · {{ task.executor.department.name|default:"—" }}</div>
+                                {% if task.executor.telegram_profile %}
+                                <div class="tg-badge">📱 Telegram привязан</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Контролирующий</div>
+                    <div class="field-value">
+                        {% if task.controller %}
+                        <div class="emp-block">
+                            <div class="emp-avatar" style="width:30px;height:30px;font-size:12px;">{{ task.controller.last_name|slice:":1" }}</div>
+                            <div>
+                                <div class="emp-name" style="font-size:12px;">{{ task.controller.last_name }} {{ task.controller.first_name }} {{ task.controller.middle_name }}</div>
+                                <div class="emp-meta">{{ task.controller.department.name|default:"—" }}</div>
+                            </div>
+                        </div>
+                        {% else %}<span style="color:#ccc;">Не назначен</span>{% endif %}
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field-label">Визирующий</div>
+                    <div class="field-value">
+                        {% if task.approver %}
+                        <div class="emp-block">
+                            <div class="emp-avatar" style="width:30px;height:30px;font-size:12px;">{{ task.approver.last_name|slice:":1" }}</div>
+                            <div>
+                                <div class="emp-name" style="font-size:12px;">{{ task.approver.last_name }} {{ task.approver.first_name }} {{ task.approver.middle_name }}</div>
+                                <div class="emp-meta">{{ task.approver.department.name|default:"—" }}</div>
+                            </div>
+                        </div>
+                        {% else %}<span style="color:#ccc;">Не назначен</span>{% endif %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══ ПРАВАЯ КОЛОНКА ══ -->
+    <div>
+
+        <!-- Действия -->
+        <div class="panel" style="margin-bottom:16px;">
+            <div class="panel__head">
+                <div class="panel__title">Действия</div>
+            </div>
+
+            <a href="{% url 'assignments:edit' task.pk %}" class="side-btn">
+                <span class="side-btn__icon">✏️</span> Редактировать
+            </a>
+
+            <button class="side-btn" onclick="toggleStatusForm()">
+                <span class="side-btn__icon">🔄</span> Изменить статус
+            </button>
+
+            <a href="/reports/print-selected/?ids={{ task.pk }}" target="_blank" class="side-btn">
+                <span class="side-btn__icon">🖨️</span> Распечатать талон
+            </a>
+
+            {% if user|user_is_admin %}
+            <form method="post" action="{% url 'assignments:delete' task.pk %}"
+                  onsubmit="return confirm('Удалить поручение № {{ task.document_number }}? Это действие нельзя отменить.')">
+                {% csrf_token %}
+                <button type="submit" class="side-btn side-btn--danger">
+                    <span class="side-btn__icon">🗑️</span> Удалить
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Уведомления -->
+        <div class="panel" style="margin-bottom:16px;">
+            <div class="panel__head">
+                <div class="panel__title">Уведомления</div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="send_notify" value="1">
+
+                <button type="submit" name="notify_type" value="new" class="side-btn">
+                    <span class="side-btn__icon">📨</span> Уведомить о новом
+                </button>
+                <button type="submit" name="notify_type" value="remind" class="side-btn">
+                    <span class="side-btn__icon">🔔</span> Напомнить
+                </button>
+                <button type="submit" name="notify_type" value="deadline" class="side-btn">
+                    <span class="side-btn__icon">📅</span> Изменение срока
+                </button>
+            </form>
+        </div>
+
+        <!-- Мета -->
+        <div class="panel">
+            <div class="panel__body" style="padding:16px;">
+                <div style="font-size:10px; color:#aaa; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:10px;">Информация</div>
+                <div style="display:flex; flex-direction:column; gap:7px; font-size:12px; color:#666;">
+                    <div>Создано: <b style="color:#111;">{{ task.created_at|date:"d.m.Y H:i" }}</b></div>
+                    <div>Обновлено: <b style="color:#111;">{{ task.updated_at|date:"d.m.Y H:i" }}</b></div>
+                    <div>Статус: <b style="color:#111;">{{ task.get_status_display }}</b></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleStatusForm() {
+    const wrap = document.getElementById('status-form-wrap');
+    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

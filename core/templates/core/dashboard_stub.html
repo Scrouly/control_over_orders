@@ -1,0 +1,26 @@
+{% extends "core/base.html" %}
+{% block title %}Дашборд{% endblock %}
+
+{% block breadcrumb %}
+<span class="sep">›</span>
+<span class="current">Дашборд</span>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Дашборд</h1>
+        <div class="page-subtitle">Добро пожаловать в систему контроля исполнения поручений</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card__body" style="text-align:center; padding:60px 20px; color:var(--body-muted);">
+        <div style="font-size:40px; margin-bottom:12px;">🚧</div>
+        <div style="font-family:var(--font-h); font-size:18px; color:var(--body-text); margin-bottom:8px;">
+            Дашборд — Шаг 2
+        </div>
+        <div>Здесь будут KPI-карточки, графики и таблица горящих поручений.</div>
+    </div>
+</div>
+{% endblock %}

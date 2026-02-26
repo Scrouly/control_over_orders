@@ -1,0 +1,540 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}Редактирование № {{ task.document_number }}{% endblock %}
+{% block breadcrumb %}
+<span class="sep">›</span><a href="{% url 'assignments:list' %}">Поручения</a>
+<span class="sep">›</span><a href="{% url 'assignments:detail' task.pk %}">№ {{ task.document_number }}</a>
+<span class="sep">›</span><span class="current">Редактировать</span>
+{% endblock %}
+
+{% block extra_css %}
+.content { background: #f5f5f3; }
+
+.edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    align-items: start;
+}
+@media (max-width: 1000px) { .edit-grid { grid-template-columns: 1fr; } }
+
+.panel { background: #fff; border: 1px solid #e8e8e4; overflow: visible; margin-bottom: 16px; }
+.panel__head { padding: 13px 20px; border-bottom: 1px solid #f0f0ee; display:flex; align-items:center; justify-content:space-between; }
+.panel__title { font-family:var(--font-h); font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; }
+.panel__body { padding: 20px; }
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 650px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+.error-msg { color: #c0392b; font-size: 11.5px; margin-top: 5px; }
+
+/* ══ ДАТА — чистый вариант ══ */
+.date-field { position: relative; display: block; }
+.date-input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid #e0e0dc;
+    font-family: var(--font-b);
+    font-size: 13px;
+    color: #111;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+    background-size: 16px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+}
+.date-input::-webkit-calendar-picker-indicator {
+    position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+    width: 100%; height: 100%; opacity: 0; cursor: pointer; margin: 0; padding: 0;
+}
+.date-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,.1); }
+
+.qbtns { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.qbtn {
+    padding: 5px 10px; font-family: var(--font-b); font-size: 11px;
+    border: 1px solid #e0e0dc; background: #fff; color: #555;
+    cursor: pointer; white-space: nowrap; transition: all .12s;
+}
+.qbtn:hover, .qbtn.active { background: var(--dark); color: #fff; border-color: var(--dark); }
+
+/* ══ КАСТОМНЫЙ SELECT ══ */
+.cs { position: relative; }
+.cs-btn {
+    width: 100%; padding: 8px 32px 8px 12px;
+    border: 1px solid #e0e0dc; background: #fff;
+    font-family: var(--font-b); font-size: 13px; color: #111;
+    cursor: pointer; text-align: left; display: flex; align-items: center;
+    min-height: 38px; position: relative;
+    transition: border-color .15s, box-shadow .15s; outline: none;
+}
+.cs-btn:focus, .cs-btn.open { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,.1); }
+.cs-btn__val { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-btn__val.ph { color: #bbb; }
+.cs-btn__arr { position: absolute; right: 10px; font-size: 10px; color: #aaa; transition: transform .15s; pointer-events: none; }
+.cs-btn.open .cs-btn__arr { transform: rotate(180deg); }
+
+.cs-drop {
+    position: absolute; top: calc(100% + 3px); left: 0; right: 0;
+    background: #fff; border: 1px solid #e0e0dc;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    z-index: 300; display: none; flex-direction: column; max-height: 260px;
+}
+.cs-drop.open { display: flex; }
+.cs-drop__search { padding: 8px; border-bottom: 1px solid #f0f0ee; flex-shrink: 0; }
+.cs-drop__search input {
+    width: 100%; padding: 6px 10px; border: 1px solid #e8e8e4;
+    font-family: var(--font-b); font-size: 12.5px; outline: none; background: #fafaf8;
+}
+.cs-drop__search input:focus { border-color: var(--accent); }
+.cs-drop__list { overflow-y: auto; flex: 1; }
+.cs-opt {
+    padding: 8px 12px; font-size: 12.5px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; transition: background .1s;
+}
+.cs-opt:hover { background: #f5f5f3; }
+.cs-opt.sel { background: #eef3ff; }
+.cs-opt__check { color: var(--accent); font-size: 12px; opacity: 0; flex-shrink: 0; }
+.cs-opt.sel .cs-opt__check { opacity: 1; }
+.cs-opt__sub { font-size: 10.5px; color: #aaa; margin-top: 1px; }
+.cs-opt.gone { display: none; }
+.cs-none { padding: 14px 12px; font-size: 12px; color: #aaa; text-align: center; display: none; }
+
+/* Статус-кружки */
+.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
+.dot-NEW         { background: #1565c0; }
+.dot-IN_PROGRESS { background: #2e7d32; }
+.dot-OVERDUE     { background: #c0392b; }
+.dot-DONE        { background: #bbb; }
+
+/* ══ ПРАВАЯ ПАНЕЛЬ ══ */
+.sticky-side { position: sticky; top: 20px; }
+
+.save-panel { overflow: hidden; }
+.save-panel__body { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Изменение срока — предупреждение */
+.deadline-changed-bar {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #7a4000;
+    display: none;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+.deadline-changed-bar.visible { display: block; }
+
+/* Мета-панель */
+.meta-panel__body { padding: 16px 20px; }
+.meta-row { display: flex; flex-direction: column; gap: 3px; padding: 10px 0; border-bottom: 1px solid #f4f4f2; }
+.meta-row:last-child { border-bottom: none; }
+.meta-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #aaa; }
+.meta-val { font-size: 12.5px; color: #111; font-weight: 700; }
+.meta-val--dim { font-size: 12px; color: #888; font-weight: 400; }
+
+.sbadge { display:inline-block; padding:3px 9px; font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.s-NEW         { background:#e3f2fd; color:#1565c0; }
+.s-IN_PROGRESS { background:#e8f5e9; color:#2e7d32; }
+.s-OVERDUE     { background:#fde8e8; color:#c0392b; }
+.s-DONE        { background:#f3f3f3; color:#777; }
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{% url 'assignments:detail' task.pk %}" class="btn btn--ghost btn--sm">← Карточка</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Редактирование поручения</h1>
+        <div class="page-subtitle">№ {{ task.document_number }} · {{ task.assignment_type.name }}</div>
+    </div>
+</div>
+
+<form method="post" id="edit-form">
+{% csrf_token %}
+
+<div class="edit-grid">
+
+    <!-- ══ ЛЕВАЯ ══ -->
+    <div>
+
+        <!-- Реквизиты -->
+        <div class="panel">
+            <div class="panel__head"><div class="panel__title">Реквизиты документа</div></div>
+            <div class="panel__body">
+
+                <div class="form-group">
+                    <label class="form-label">Вид поручения *</label>
+                    <div class="cs" id="cs-type">
+                        <button type="button" class="cs-btn" onclick="openCS('cs-type')">
+                            <span class="cs-btn__val {% if not task.assignment_type %}ph{% endif %}" id="cs-type-lbl">
+                                {{ task.assignment_type.name|default:"— Выберите вид —" }}
+                            </span>
+                            <span class="cs-btn__arr">▾</span>
+                        </button>
+                        <div class="cs-drop" id="cs-type-drop">
+                            <div class="cs-drop__search">
+                                <input type="text" placeholder="Поиск…" oninput="filterCS('cs-type',this.value)" id="cs-type-srch">
+                            </div>
+                            <div class="cs-drop__list">
+                                {% for t in form.assignment_type.field.queryset %}
+                                <div class="cs-opt {% if t.id == task.assignment_type_id %}sel{% endif %}"
+                                     data-v="{{ t.id }}" data-l="{{ t.name }}" onclick="pickCS('cs-type',this)">
+                                    <span class="cs-opt__check">✓</span>
+                                    <span>{{ t.name }}</span>
+                                </div>
+                                {% endfor %}
+                                <div class="cs-none">Ничего не найдено</div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="assignment_type" id="cs-type-val" value="{{ task.assignment_type_id }}">
+                    </div>
+                    {% if form.assignment_type.errors %}<div class="error-msg">{{ form.assignment_type.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label">Номер документа *</label>
+                        {{ form.document_number }}
+                        {% if form.document_number.errors %}<div class="error-msg">{{ form.document_number.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Дата издания *</label>
+                        <div class="date-field">
+                            {{ form.issue_date }}
+                        </div>
+                        {% if form.issue_date.errors %}<div class="error-msg">{{ form.issue_date.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Текст поручения *</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<div class="error-msg">{{ form.description.errors.0 }}</div>{% endif %}
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Исполнение -->
+        <div class="panel">
+            <div class="panel__head"><div class="panel__title">Исполнение</div></div>
+            <div class="panel__body">
+
+                <div class="form-group">
+                    <label class="form-label">Исполнитель *</label>
+                    <div class="cs" id="cs-exec">
+                        <button type="button" class="cs-btn" onclick="openCS('cs-exec')">
+                            <span class="cs-btn__val" id="cs-exec-lbl">
+                                {{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}.{{ task.executor.middle_name|slice:":1" }}.
+                                <span style="color:#aaa;font-weight:400;"> — {{ task.executor.department.name|default:"" }}</span>
+                            </span>
+                            <span class="cs-btn__arr">▾</span>
+                        </button>
+                        <div class="cs-drop" id="cs-exec-drop">
+                            <div class="cs-drop__search">
+                                <input type="text" placeholder="Поиск по фамилии…" oninput="filterCS('cs-exec',this.value)" id="cs-exec-srch">
+                            </div>
+                            <div class="cs-drop__list">
+                                {% regroup form.executor.field.queryset by department as exec_by_dept %}
+                                {% for dept in exec_by_dept %}
+                                <div style="padding:5px 12px 3px; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#bbb; background:#fafaf8; border-bottom:1px solid #f4f4f2;">
+                                    {{ dept.grouper.name|default:"Без подразделения" }}
+                                </div>
+                                {% for e in dept.list %}
+                                <div class="cs-opt {% if e.id == task.executor_id %}sel{% endif %}"
+                                     data-v="{{ e.id }}"
+                                     data-l="{{ e.last_name }} {{ e.first_name|slice:':1' }}.{{ e.middle_name|slice:':1' }}."
+                                     data-search="{{ e.last_name }} {{ e.first_name }} {{ e.middle_name }} {{ e.department.name|default:'' }}"
+                                     onclick="pickCS('cs-exec',this)">
+                                    <span class="cs-opt__check">✓</span>
+                                    <div>
+                                        <div>{{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.</div>
+                                        <div class="cs-opt__sub">{{ e.position.name|default:"—" }} · {{ e.department.name|default:"—" }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                                <div class="cs-none">Ничего не найдено</div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="executor" id="cs-exec-val" value="{{ task.executor_id }}">
+                    </div>
+                    {% if form.executor.errors %}<div class="error-msg">{{ form.executor.errors.0 }}</div>{% endif %}
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label">Срок исполнения *</label>
+                        <div class="date-wrap">
+                            <span class="date-wrap__icon">📅</span>
+                            {{ form.deadline }}
+                        </div>
+                        <div class="qbtns">
+                            <button type="button" class="qbtn" onclick="setDL(7,this)">+7 дн.</button>
+                            <button type="button" class="qbtn" onclick="setDL(14,this)">+14 дн.</button>
+                            <button type="button" class="qbtn" onclick="setDL(30,this)">+30 дн.</button>
+                            <button type="button" class="qbtn" onclick="setDLMonth(this)">Кон. месяца</button>
+                        </div>
+                        {% if form.deadline.errors %}<div class="error-msg">{{ form.deadline.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Статус</label>
+                        <div class="cs" id="cs-status">
+                            <button type="button" class="cs-btn" onclick="openCS('cs-status')">
+                                <span class="cs-btn__val" id="cs-status-lbl">
+                                    <span class="status-dot dot-{{ task.status }}"></span>{{ task.get_status_display }}
+                                </span>
+                                <span class="cs-btn__arr">▾</span>
+                            </button>
+                            <div class="cs-drop" id="cs-status-drop">
+                                <div class="cs-drop__list" style="max-height:200px;">
+                                    {% for val, label in form.status.field.choices %}
+                                    <div class="cs-opt {% if val == task.status %}sel{% endif %}"
+                                         data-v="{{ val }}" data-l="{{ label }}" data-dot="dot-{{ val }}"
+                                         onclick="pickStatus(this)">
+                                        <span class="cs-opt__check">✓</span>
+                                        <span class="status-dot dot-{{ val }}"></span>
+                                        <span>{{ label }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <input type="hidden" name="status" id="cs-status-val" value="{{ task.status }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label class="form-label">Контролирующий</label>
+                        <div class="cs" id="cs-ctrl">
+                            <button type="button" class="cs-btn" onclick="openCS('cs-ctrl')">
+                                <span class="cs-btn__val {% if not task.controller %}ph{% endif %}" id="cs-ctrl-lbl">
+                                    {% if task.controller %}{{ task.controller.last_name }} {{ task.controller.first_name|slice:":1" }}.{{ task.controller.middle_name|slice:":1" }}.{% else %}— Не назначен —{% endif %}
+                                </span>
+                                <span class="cs-btn__arr">▾</span>
+                            </button>
+                            <div class="cs-drop" id="cs-ctrl-drop">
+                                <div class="cs-drop__search">
+                                    <input type="text" placeholder="Поиск…" oninput="filterCS('cs-ctrl',this.value)" id="cs-ctrl-srch">
+                                </div>
+                                <div class="cs-drop__list">
+                                    <div class="cs-opt {% if not task.controller %}sel{% endif %}" data-v="" data-l="— Не назначен —" onclick="pickCS('cs-ctrl',this)">
+                                        <span class="cs-opt__check">✓</span><span style="color:#aaa;">— Не назначен —</span>
+                                    </div>
+                                    {% for e in form.controller.field.queryset %}
+                                    <div class="cs-opt {% if e.id == task.controller_id %}sel{% endif %}"
+                                         data-v="{{ e.id }}" data-l="{{ e.last_name }} {{ e.first_name|slice:':1' }}.{{ e.middle_name|slice:':1' }}."
+                                         onclick="pickCS('cs-ctrl',this)">
+                                        <span class="cs-opt__check">✓</span>
+                                        <div>
+                                            <div>{{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.</div>
+                                            <div class="cs-opt__sub">{{ e.department.name|default:"—" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="cs-none">Ничего не найдено</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="controller" id="cs-ctrl-val" value="{{ task.controller_id|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Визирующий</label>
+                        <div class="cs" id="cs-appr">
+                            <button type="button" class="cs-btn" onclick="openCS('cs-appr')">
+                                <span class="cs-btn__val {% if not task.approver %}ph{% endif %}" id="cs-appr-lbl">
+                                    {% if task.approver %}{{ task.approver.last_name }} {{ task.approver.first_name|slice:":1" }}.{{ task.approver.middle_name|slice:":1" }}.{% else %}— Не назначен —{% endif %}
+                                </span>
+                                <span class="cs-btn__arr">▾</span>
+                            </button>
+                            <div class="cs-drop" id="cs-appr-drop">
+                                <div class="cs-drop__search">
+                                    <input type="text" placeholder="Поиск…" oninput="filterCS('cs-appr',this.value)" id="cs-appr-srch">
+                                </div>
+                                <div class="cs-drop__list">
+                                    <div class="cs-opt {% if not task.approver %}sel{% endif %}" data-v="" data-l="— Не назначен —" onclick="pickCS('cs-appr',this)">
+                                        <span class="cs-opt__check">✓</span><span style="color:#aaa;">— Не назначен —</span>
+                                    </div>
+                                    {% for e in form.approver.field.queryset %}
+                                    <div class="cs-opt {% if e.id == task.approver_id %}sel{% endif %}"
+                                         data-v="{{ e.id }}" data-l="{{ e.last_name }} {{ e.first_name|slice:':1' }}.{{ e.middle_name|slice:':1' }}."
+                                         onclick="pickCS('cs-appr',this)">
+                                        <span class="cs-opt__check">✓</span>
+                                        <div>
+                                            <div>{{ e.last_name }} {{ e.first_name|slice:":1" }}.{{ e.middle_name|slice:":1" }}.</div>
+                                            <div class="cs-opt__sub">{{ e.department.name|default:"—" }}</div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    <div class="cs-none">Ничего не найдено</div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="approver" id="cs-appr-val" value="{{ task.approver_id|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══ ПРАВАЯ ══ -->
+    <div class="sticky-side">
+
+        <!-- Предупреждение об изменении срока -->
+        <div class="deadline-changed-bar" id="deadline-bar">
+            📅 Срок изменён.<br>Не забудьте уведомить исполнителя.
+        </div>
+
+        <!-- Кнопки -->
+        <div class="panel save-panel">
+            <div class="panel__head"><div class="panel__title">Сохранить</div></div>
+            <div class="save-panel__body">
+                <button type="submit" name="save" class="btn btn--primary" style="width:100%;">
+                    ✓ Сохранить изменения
+                </button>
+                <button type="submit" name="save_notify" id="btn-save-notify"
+                        class="btn btn--outline" style="width:100%; display:none;">
+                    📅 Сохранить и уведомить об изменении срока
+                </button>
+                <a href="{% url 'assignments:detail' task.pk %}"
+                   class="btn btn--ghost" style="width:100%; text-align:center; display:block;">
+                    Отмена
+                </a>
+            </div>
+        </div>
+
+        <!-- Текущие данные -->
+        <div class="panel">
+            <div class="panel__head"><div class="panel__title">До изменений</div></div>
+            <div class="meta-panel__body">
+                <div class="meta-row">
+                    <div class="meta-label">Статус</div>
+                    <div><span class="sbadge s-{{ task.status }}">{{ task.get_status_display }}</span></div>
+                </div>
+                <div class="meta-row">
+                    <div class="meta-label">Исполнитель</div>
+                    <div class="meta-val">{{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}.{{ task.executor.middle_name|slice:":1" }}.</div>
+                    <div class="meta-val--dim">{{ task.executor.department.name|default:"—" }}</div>
+                </div>
+                <div class="meta-row">
+                    <div class="meta-label">Срок</div>
+                    <div class="meta-val">{{ task.deadline|date:"d.m.Y" }}</div>
+                </div>
+                <div class="meta-row">
+                    <div class="meta-label">Обновлено</div>
+                    <div class="meta-val--dim">{{ task.updated_at|date:"d.m.Y H:i" }}</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+// ══ КАСТОМНЫЙ SELECT ══════════════════════════════════
+function openCS(id) {
+    const drop = document.getElementById(id + '-drop');
+    const btn  = document.querySelector(`#${id} .cs-btn`);
+    const isOpen = drop.classList.contains('open');
+    closeAllCS();
+    if (!isOpen) {
+        drop.classList.add('open'); btn.classList.add('open');
+        const srch = document.getElementById(id + '-srch');
+        if (srch) { srch.value = ''; filterCS(id, ''); setTimeout(() => srch.focus(), 50); }
+    }
+}
+function closeAllCS() {
+    document.querySelectorAll('.cs-drop.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.cs-btn.open').forEach(b => b.classList.remove('open'));
+}
+function pickCS(id, el) {
+    const val = el.dataset.v, lbl = el.dataset.l;
+    document.querySelectorAll(`#${id}-drop .cs-opt`).forEach(o => o.classList.remove('sel'));
+    el.classList.add('sel');
+    const lblEl = document.getElementById(id + '-lbl');
+    lblEl.textContent = lbl;
+    lblEl.classList.toggle('ph', !val);
+    document.getElementById(id + '-val').value = val;
+    closeAllCS();
+}
+function pickStatus(el) {
+    const val = el.dataset.v, lbl = el.dataset.l, dot = el.dataset.dot;
+    document.querySelectorAll('#cs-status-drop .cs-opt').forEach(o => o.classList.remove('sel'));
+    el.classList.add('sel');
+    const lblEl = document.getElementById('cs-status-lbl');
+    lblEl.innerHTML = `<span class="status-dot ${dot}"></span>${lbl}`;
+    document.getElementById('cs-status-val').value = val;
+    closeAllCS();
+}
+function filterCS(id, q) {
+    const lq = q.toLowerCase();
+    let vis = 0;
+    document.querySelectorAll(`#${id}-drop .cs-opt`).forEach(o => {
+        // Используем data-search если есть (для исполнителя с группировкой)
+        const text = (o.dataset.search || o.textContent).toLowerCase();
+        const show = text.includes(lq);
+        o.classList.toggle('gone', !show);
+        if (show) vis++;
+    });
+    // Заголовки цехов в исполнителе
+    document.querySelectorAll(`#${id}-drop [style*="background:#fafaf8"]`).forEach(h => {
+        // Показываем заголовок если хотя бы один после него виден
+        let next = h.nextElementSibling;
+        let hasVisible = false;
+        while (next && !next.style.background) { if (!next.classList.contains('gone')) hasVisible = true; next = next.nextElementSibling; }
+        h.style.display = hasVisible ? '' : 'none';
+    });
+    const none = document.querySelector(`#${id}-drop .cs-none`);
+    if (none) none.style.display = vis ? 'none' : 'block';
+}
+document.addEventListener('click', e => { if (!e.target.closest('.cs')) closeAllCS(); });
+
+// ══ СРОК ══════════════════════════════════════════════
+const origDeadline = '{{ task.deadline|date:"Y-m-d" }}';
+const deadlineInput = document.querySelector('[name="deadline"]');
+const deadlineBar   = document.getElementById('deadline-bar');
+const btnNotify     = document.getElementById('btn-save-notify');
+
+deadlineInput.addEventListener('change', () => {
+    const changed = deadlineInput.value !== origDeadline;
+    deadlineBar.classList.toggle('visible', changed);
+    btnNotify.style.display = changed ? 'block' : 'none';
+});
+
+function isoDate(d) { return d.toISOString().split('T')[0]; }
+function setDL(days, btn) {
+    const d = new Date(); d.setDate(d.getDate() + days);
+    deadlineInput.value = isoDate(d);
+    deadlineInput.dispatchEvent(new Event('change'));
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function setDLMonth(btn) {
+    const d = new Date();
+    deadlineInput.value = isoDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    deadlineInput.dispatchEvent(new Event('change'));
+    document.querySelectorAll('.qbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
+{% endblock %}

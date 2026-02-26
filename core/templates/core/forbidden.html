@@ -1,0 +1,18 @@
+{% extends "core/base.html" %}
+{% block title %}Доступ запрещён{% endblock %}
+
+{% block breadcrumb %}
+<span class="sep">›</span>
+<span class="current">Доступ запрещён</span>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:400px; text-align:center;">
+    <div style="font-size:48px; margin-bottom:16px;">🔒</div>
+    <h1 style="font-family:var(--font-h); font-size:24px; margin-bottom:8px;">Доступ запрещён</h1>
+    <p style="color:var(--body-muted); margin-bottom:24px;">
+        У вашей учётной записи нет прав для просмотра этой страницы.
+    </p>
+    <a href="{% url 'core:dashboard' %}" class="btn btn--primary">На главную</a>
+</div>
+{% endblock %}

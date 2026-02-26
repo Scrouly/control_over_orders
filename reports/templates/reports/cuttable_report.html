@@ -1,0 +1,62 @@
+{% extends "reports/base_print.html" %}
+
+{% block title %}Контрольные талоны{% endblock %}
+
+{% block content %}
+    {% for group in grouped_tasks %}
+
+    <div class="task-container">
+
+        <div class="header-block header-block--compact">
+            <div>
+                <div class="company-title">ОАО «Доломит»</div>
+                <div class="company-subtitle">Система контроля исполнения поручений</div>
+            </div>
+            <div class="doc-meta">
+                <div class="doc-meta__title">Контрольный талон</div>
+            </div>
+        </div>
+
+        <div class="employee-card employee-card--compact">
+            <div>
+                <div class="emp-label">Исполнитель</div>
+                <div class="emp-name">{{ group.executor.last_name }} {{ group.executor.first_name }} {{ group.executor.middle_name }}</div>
+            </div>
+            <div class="emp-info">
+                <div class="emp-name emp-name--small">{{ group.executor.position.name|default:"—" }}</div>
+                <div class="emp-detail">{{ group.executor.department.name|default:"—" }}</div>
+            </div>
+        </div>
+
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th class="col-doc">Тип / Номер</th>
+                    <th class="col-desc">Содержание поручения</th>
+                    <th class="col-dates">Даты</th>
+                    <th class="col-sign col-sign--control">Контроль</th>
+                    <th class="col-sign col-sign--approval">Виза</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in group.tasks %}
+                    {% include "reports/_task_row.html" %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+    {% if not forloop.last %}
+        <div class="cut-separator">
+        </div>
+    {% endif %}
+
+    {% endfor %}
+
+    {% if not grouped_tasks %}
+        <div style="text-align:center; padding: 60px 20px; color: #999; font-size: 13px;">
+            Поручения не выбраны
+        </div>
+    {% endif %}
+{% endblock %}

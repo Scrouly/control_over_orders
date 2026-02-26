@@ -1,0 +1,600 @@
+{% extends "core/base.html" %}
+{% load core_tags %}
+
+{% block title %}Дашборд{% endblock %}
+{% block breadcrumb %}<span class="sep">›</span><span class="current">Дашборд</span>{% endblock %}
+
+{% block extra_css %}
+.content { padding: 0 !important; background: #f5f5f3; }
+
+/* ══ ШАПКА ══ */
+.dash-top {
+    background: #fff;
+    border-bottom: 1px solid #e8e8e4;
+    padding: 22px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.dash-top__eyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #aaa;
+    margin-bottom: 3px;
+}
+.dash-top__title {
+    font-family: var(--font-h);
+    font-size: 22px;
+    font-weight: 700;
+    color: #111;
+}
+
+/* ══ BODY ══ */
+.dash-body { padding: 24px 32px; }
+
+/* ══ KPI ══ */
+.kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    background: #fff;
+    border: 1px solid #e8e8e4;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+@media (max-width: 1200px) { .kpi-strip { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px)  { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+
+.kpi {
+    padding: 22px 24px 20px;
+    border-right: 1px solid #e8e8e4;
+    position: relative;
+    transition: background 0.15s;
+}
+.kpi:last-child { border-right: none; }
+.kpi:hover { background: #fafaf8; }
+
+/* Акцентная полоска снизу */
+.kpi::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--kc, #e8e8e4);
+    transition: background 0.15s;
+}
+.kpi:hover::after { background: var(--kc, #ccc); }
+
+.kpi__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.kpi__label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #999;
+    line-height: 1.3;
+    max-width: 100px;
+}
+.kpi__icon-wrap {
+    width: 32px;
+    height: 32px;
+    background: var(--ki, #f0f0ee);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    border-radius: 2px;
+}
+.kpi__num {
+    font-family: var(--font-h);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--kc, #111);
+    letter-spacing: -0.02em;
+}
+.kpi__sub {
+    font-size: 10px;
+    color: #bbb;
+    margin-top: 6px;
+}
+
+/* ══ GRID ══ */
+.row { display: grid; gap: 16px; margin-bottom: 16px; }
+.row--2-1 { grid-template-columns: 2fr 1fr; }
+.row--3   { grid-template-columns: 1fr 1fr 1fr; }
+.row--2   { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1100px) {
+    .row--2-1, .row--3 { grid-template-columns: 1fr; }
+}
+@media (max-width: 800px) {
+    .row--2 { grid-template-columns: 1fr; }
+}
+
+/* ══ ПАНЕЛЬ ══ */
+.panel {
+    background: #fff;
+    border: 1px solid #e8e8e4;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.panel__head {
+    padding: 14px 20px 13px;
+    border-bottom: 1px solid #f0f0ee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.panel__title {
+    font-family: var(--font-h);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #111;
+}
+.panel__sub {
+    font-size: 10px;
+    color: #bbb;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.panel__body { padding: 20px; flex: 1; }
+.panel__body--bare { flex: 1; overflow: auto; }
+
+/* ══ ГОРЯЩИЕ ══ */
+.urgent-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 130px 100px;
+    gap: 0 16px;
+    align-items: center;
+    padding: 11px 20px;
+    border-bottom: 1px solid #f4f4f2;
+    font-size: 12.5px;
+    transition: background 0.1s;
+}
+.urgent-row:last-child { border-bottom: none; }
+.urgent-row:hover { background: #fafaf8; }
+.urgent-row__num {
+    font-family: var(--font-h);
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.urgent-row__type {
+    font-size: 9.5px;
+    color: #bbb;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 1px;
+}
+.urgent-row__desc {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #333;
+}
+.urgent-row__person {
+    font-size: 11px;
+    color: #777;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.urgent-row__chip { text-align: right; }
+
+.chip {
+    display: inline-block;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border-radius: 1px;
+}
+.chip--red    { background: #fde8e8; color: #c0392b; }
+.chip--orange { background: #fff3e0; color: #904000; }
+.chip--green  { background: #e8f5e9; color: #2e7d32; }
+.chip--blue   { background: #e3f2fd; color: #1565c0; }
+
+/* ══ DONUT ЛЕГЕНДА ══ */
+.donut-wrap {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 24px;
+    align-items: center;
+}
+.donut-legend { display: flex; flex-direction: column; gap: 10px; }
+.dl-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dl-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #444;
+}
+.dl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.dl-val {
+    font-family: var(--font-h);
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+}
+
+/* ══ ЛЕНТА ══ */
+.feed-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 11px 20px;
+    border-bottom: 1px solid #f4f4f2;
+    transition: background 0.1s;
+}
+.feed-row:last-child { border-bottom: none; }
+.feed-row:hover { background: #fafaf8; }
+.feed-row__bar {
+    width: 3px;
+    min-height: 30px;
+    align-self: stretch;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: var(--fc, #4f8ef7);
+}
+.feed-row__body { flex: 1; min-width: 0; }
+.feed-row__num  { font-weight: 700; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feed-row__meta { font-size: 10.5px; color: #aaa; margin-top: 2px; }
+.feed-row__date { font-size: 10px; color: #bbb; flex-shrink: 0; padding-top: 2px; }
+
+/* ══ ПУСТО ══ */
+.empty-block {
+    text-align: center;
+    padding: 44px 20px;
+    color: #bbb;
+    font-size: 12.5px;
+}
+.empty-block__icon { font-size: 28px; margin-bottom: 8px; }
+
+/* ══ АНИМАЦИИ ══ */
+@keyframes fadeUp {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+.a { opacity:0; animation: fadeUp 0.3s ease forwards; }
+.a1{animation-delay:.04s} .a2{animation-delay:.08s} .a3{animation-delay:.12s}
+.a4{animation-delay:.16s} .a5{animation-delay:.20s} .a6{animation-delay:.24s}
+.a7{animation-delay:.28s} .a8{animation-delay:.32s}
+{% endblock %}
+
+
+{% block content %}
+
+<!-- ШАПКА -->
+<div class="dash-top a a1">
+    <div>
+        <div class="dash-top__eyebrow">{{ today|date:"l, d E Y г." }}</div>
+        <div class="dash-top__title">Дашборд</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+        <a href="{% url 'reports:deadline_filter' %}" class="btn btn--outline btn--sm">📅 По сроку</a>
+        <a href="#" class="btn btn--primary btn--sm">✏️ Новое поручение</a>
+
+        {# Кнопка проверки просрочки #}
+        <form method="post" action="{% url 'core:check_overdue' %}" id="check-overdue-form" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--sm" id="check-overdue-btn"
+                style="background:#fff3e0;color:#7a4000;border:1px solid #f5c07a;font-weight:700;"
+                onclick="startCheck(event)">
+                <span id="check-icon">🔍</span>
+                <span id="check-label">Проверить просрочку</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="dash-body">
+
+    <!-- ══ KPI ══ -->
+    <div class="kpi-strip a a2">
+
+        <div class="kpi" style="--kc:#4f8ef7; --ki:#eef3ff;">
+            <div class="kpi__header">
+                <div class="kpi__label">Активных поручений</div>
+                <div class="kpi__icon-wrap">📋</div>
+            </div>
+            <div class="kpi__num" style="color:#111;">{{ kpi.active }}</div>
+            <div class="kpi__sub">на контроле</div>
+        </div>
+
+        <div class="kpi" style="--kc:#e53935; --ki:#fdecea;">
+            <div class="kpi__header">
+                <div class="kpi__label">Просрочено</div>
+                <div class="kpi__icon-wrap">⚠️</div>
+            </div>
+            <div class="kpi__num" style="color:{% if kpi.overdue %}#c0392b{% else %}#111{% endif %};">{{ kpi.overdue }}</div>
+            <div class="kpi__sub">{% if kpi.overdue %}требуют внимания{% else %}всё в порядке{% endif %}</div>
+        </div>
+
+        <div class="kpi" style="--kc:#f57c00; --ki:#fff4e5;">
+            <div class="kpi__header">
+                <div class="kpi__label">Срок сегодня</div>
+                <div class="kpi__icon-wrap">⏰</div>
+            </div>
+            <div class="kpi__num" style="color:{% if kpi.today %}#d35400{% else %}#111{% endif %};">{{ kpi.today }}</div>
+            <div class="kpi__sub">до конца дня</div>
+        </div>
+
+        <div class="kpi" style="--kc:#1565c0; --ki:#e8f0fe;">
+            <div class="kpi__header">
+                <div class="kpi__label">На этой неделе</div>
+                <div class="kpi__icon-wrap">📆</div>
+            </div>
+            <div class="kpi__num" style="color:#111;">{{ kpi.week }}</div>
+            <div class="kpi__sub">ближайшие 7 дней</div>
+        </div>
+
+        <div class="kpi" style="--kc:#2e7d32; --ki:#e8f5e9;">
+            <div class="kpi__header">
+                <div class="kpi__label">Исполнено в месяце</div>
+                <div class="kpi__icon-wrap">✅</div>
+            </div>
+            <div class="kpi__num" style="color:#111;">{{ kpi.done_month }}</div>
+            <div class="kpi__sub">{{ today|date:"E Y" }}</div>
+        </div>
+
+        <div class="kpi" style="--kc:#00695c; --ki:#e0f2f1;">
+            <div class="kpi__header">
+                <div class="kpi__label">Сотрудников</div>
+                <div class="kpi__icon-wrap">👥</div>
+            </div>
+            <div class="kpi__num" style="color:#111;">{{ kpi.total_employees }}</div>
+            <div class="kpi__sub">активных</div>
+        </div>
+
+    </div>
+
+    <!-- ══ СТРОКА 1: горящие + donut ══ -->
+    <div class="row row--2-1 a a4">
+
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">Требуют внимания</div>
+                <div class="panel__sub">просрочено · сегодня · завтра</div>
+            </div>
+            <div class="panel__body--bare">
+                {% if urgent %}
+                    {% for task in urgent %}
+                    <div class="urgent-row">
+                        <div>
+                            <div class="urgent-row__type">{{ task.assignment_type.name }}</div>
+                            <div class="urgent-row__num">№ {{ task.document_number }}</div>
+                        </div>
+                        <div class="urgent-row__desc">{{ task.description }}</div>
+                        <div class="urgent-row__person">
+                            {{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}.
+                            <br>{{ task.executor.department.name|default:"—" }}
+                        </div>
+                        <div class="urgent-row__chip">
+                            {% if task.status == 'OVERDUE' %}<span class="chip chip--red">Просрочено</span>
+                            {% elif task.deadline == today %}<span class="chip chip--orange">Сегодня</span>
+                            {% else %}<span class="chip chip--green">{{ task.deadline|date:"d.m" }}</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-block">
+                    <div class="empty-block__icon">✅</div>
+                    Нет горящих поручений
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">По статусам</div>
+            </div>
+            <div class="panel__body" style="display:flex; align-items:center; justify-content:center; min-height:220px;">
+                <div class="donut-wrap">
+                    <canvas id="chartStatuses" width="140" height="140" style="flex-shrink:0;"></canvas>
+                    <div class="donut-legend" id="donut-legend"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ══ СТРОКА 2: динамика на полную ширину ══ -->
+    <div class="row a a5">
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">Динамика поручений</div>
+                <div class="panel__sub">последние 6 месяцев</div>
+            </div>
+            <div class="panel__body">
+                <canvas id="chartMonthly" height="60"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ СТРОКА 3: исполнители + подразделения + лента ══ -->
+    <div class="row row--3 a a6">
+
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">Исполнители</div>
+                <div class="panel__sub">нагрузка · топ 8</div>
+            </div>
+            <div class="panel__body">
+                <canvas id="chartExecutors" height="220"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">Подразделения</div>
+                <div class="panel__sub">активные поручения</div>
+            </div>
+            <div class="panel__body">
+                <canvas id="chartDepts" height="220"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel__head">
+                <div class="panel__title">Последние поручения</div>
+            </div>
+            <div class="panel__body--bare">
+                {% for task in recent %}
+                <div class="feed-row">
+                    <div class="feed-row__bar" style="--fc:
+                        {% if task.status == 'OVERDUE' %}#e53935
+                        {% elif task.status == 'DONE' %}#43a047
+                        {% elif task.status == 'IN_PROGRESS' %}#4f8ef7
+                        {% else %}#ccc{% endif %}">
+                    </div>
+                    <div class="feed-row__body">
+                        <div class="feed-row__num">№ {{ task.document_number }} · {{ task.assignment_type.name }}</div>
+                        <div class="feed-row__meta">
+                            {{ task.executor.last_name }} {{ task.executor.first_name|slice:":1" }}. ·
+                            срок {{ task.deadline|date:"d.m.Y" }}
+                        </div>
+                    </div>
+                    <div class="feed-row__date">{{ task.created_at|date:"d.m" }}</div>
+                </div>
+                {% empty %}
+                <div class="empty-block"><div class="empty-block__icon">📭</div>Поручений нет</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ── Кнопка проверки просрочки ────────────────────────────
+function startCheck(e) {
+    const btn   = document.getElementById('check-overdue-btn');
+    const icon  = document.getElementById('check-icon');
+    const label = document.getElementById('check-label');
+    icon.textContent  = '⏳';
+    label.textContent = 'Проверяем…';
+    btn.style.opacity = '0.7';
+    // Таймаут: если через 10 сек нет ответа — разблокировать
+    setTimeout(() => {
+        icon.textContent  = '🔍';
+        label.textContent = 'Проверить просрочку';
+        btn.style.opacity = '1';
+    }, 10000);
+}
+</script>
+<script>
+Chart.defaults.font.family = "'PT Sans', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = '#999';
+
+const PALETTE = ['#4f8ef7','#43a047','#f57c00','#e53935','#00897b','#8e24aa','#1565c0','#6d4c41'];
+const STATUS_COLORS = {'Новое':'#4f8ef7','В работе':'#43a047','Просрочено':'#e53935','Исполнено':'#ddd'};
+
+const dm = {{ chart_monthly|safe }};
+const de = {{ chart_executors|safe }};
+const dd = {{ chart_departments|safe }};
+const ds = {{ chart_statuses|safe }};
+
+/* Динамика */
+new Chart(document.getElementById('chartMonthly'), {
+    type: 'bar',
+    data: {
+        labels: dm.labels,
+        datasets: [
+            { label:'Выдано',     data:dm.issued,  backgroundColor:'rgba(79,142,247,.75)',  borderRadius:3 },
+            { label:'Исполнено',  data:dm.done,    backgroundColor:'rgba(67,160,71,.75)',   borderRadius:3 },
+            { label:'Просрочено', data:dm.overdue, backgroundColor:'rgba(229,57,53,.75)',   borderRadius:3 },
+        ]
+    },
+    options: {
+        responsive:true, maintainAspectRatio:true,
+        plugins:{ legend:{ position:'top', align:'end' }, tooltip:{ mode:'index', intersect:false } },
+        scales:{
+            x:{ grid:{ display:false } },
+            y:{ beginAtZero:true, grid:{ color:'#f4f4f2' }, ticks:{ precision:0 } },
+        },
+        animation:{ duration:450 },
+    }
+});
+
+/* Donut */
+const scol = ds.labels.map(l => STATUS_COLORS[l] || '#ccc');
+new Chart(document.getElementById('chartStatuses'), {
+    type:'doughnut',
+    data:{
+        labels: ds.labels,
+        datasets:[{ data:ds.values, backgroundColor:scol, borderWidth:3, borderColor:'#fff', hoverOffset:6 }]
+    },
+    options:{
+        cutout:'68%',
+        plugins:{ legend:{ display:false } },
+        animation:{ duration:600 },
+    }
+});
+// Легенда вручную
+const leg = document.getElementById('donut-legend');
+ds.labels.forEach((l,i) => {
+    leg.innerHTML += `<div class="dl-row">
+        <div class="dl-label"><div class="dl-dot" style="background:${scol[i]}"></div>${l}</div>
+        <div class="dl-val">${ds.values[i]}</div>
+    </div>`;
+});
+
+/* Исполнители */
+new Chart(document.getElementById('chartExecutors'), {
+    type:'bar',
+    data:{
+        labels: de.labels,
+        datasets:[{ data:de.values, backgroundColor:de.values.map((_,i)=>i===0?'#e5393588':'#4f8ef788'), borderRadius:2 }]
+    },
+    options:{
+        indexAxis:'y', responsive:true,
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:c=>` ${c.raw}` } } },
+        scales:{
+            x:{ beginAtZero:true, ticks:{ precision:0 }, grid:{ color:'#f4f4f2' } },
+            y:{ grid:{ display:false } },
+        },
+        animation:{ duration:450 },
+    }
+});
+
+/* Подразделения */
+new Chart(document.getElementById('chartDepts'), {
+    type:'bar',
+    data:{
+        labels: dd.labels,
+        datasets:[{ data:dd.values, backgroundColor:PALETTE.map(c=>c+'aa'), borderRadius:2 }]
+    },
+    options:{
+        indexAxis:'y', responsive:true,
+        plugins:{ legend:{ display:false } },
+        scales:{
+            x:{ beginAtZero:true, ticks:{ precision:0 }, grid:{ color:'#f4f4f2' } },
+            y:{ grid:{ display:false } },
+        },
+        animation:{ duration:450 },
+    }
+});
+</script>
+{% endblock %}

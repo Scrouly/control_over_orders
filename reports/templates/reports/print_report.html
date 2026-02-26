@@ -1,0 +1,56 @@
+{% extends "reports/base_print.html" %}
+
+{% block title %}Лист контроля: {{ employee.last_name }} {{ employee.first_name|slice:":1" }}.{% endblock %}
+
+{% block content %}
+    <div class="header-block">
+        <div>
+            <h1 class="company-title">ОАО «Доломит»</h1>
+            <div class="company-subtitle">Система контроля исполнения поручений</div>
+        </div>
+        <div class="doc-meta">
+            <div class="doc-meta__title doc-meta__title--large">Лист контроля</div>
+            <div class="doc-meta__subtitle">на дату: {{ report_date|date:"d.m.Y" }}</div>
+        </div>
+    </div>
+
+    <div class="employee-card">
+        <div>
+            <div class="emp-label">Исполнитель</div>
+            <div class="emp-name">{{ employee.last_name }} {{ employee.first_name }} {{ employee.middle_name }}</div>
+        </div>
+        <div class="emp-info">
+            <div class="emp-name emp-name--small">{{ employee.position.name|default:"—" }}</div>
+            <div class="emp-detail">{{ employee.department.name|default:"—" }}</div>
+        </div>
+    </div>
+
+    <table class="task-table">
+        <thead>
+            <tr>
+                <th class="col-doc">Тип / Номер</th>
+                <th class="col-desc">Текст поручения</th>
+                <th class="col-dates">Даты</th>
+                <th class="col-sign col-sign--control">Контролёр</th>
+                <th class="col-sign col-sign--approval">Виза</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in assignments %}
+                {% include "reports/_task_row.html" %}
+            {% empty %}
+                <tr>
+                    <td colspan="5" style="padding: 30px; text-align: center; color: #999; font-style: italic;">
+                        Нет активных поручений
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if assignments %}
+    <div style="margin-top: 10px; text-align: right; font-size: 8px; color: #aaa; letter-spacing: 0.05em;">
+        Всего поручений: {{ assignments|length }}
+    </div>
+    {% endif %}
+{% endblock %}

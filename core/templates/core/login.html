@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — ОАО «Доломит»</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=PT+Sans:wght@400;700&display=swap');
+
+        :root {
+            --dark:   #12122a;
+            --dark-2: #1a1a3e;
+            --accent: #4f8ef7;
+            --font-h: 'PT Serif', Georgia, serif;
+            --font-b: 'PT Sans', sans-serif;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-b);
+            background: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Декоративная сетка на фоне */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(79,142,247,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79,142,247,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Свечение в углу */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px; right: -200px;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(79,142,247,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .login-wrap {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Шапка */
+        .login-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .login-header__logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px; height: 52px;
+            background: var(--dark-2);
+            border: 1px solid rgba(79,142,247,0.3);
+            font-family: var(--font-h);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+        .login-header__company {
+            font-family: var(--font-h);
+            font-size: 18px;
+            font-weight: 700;
+            color: #e8e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .login-header__system {
+            font-size: 11px;
+            color: rgba(232,232,240,0.4);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Карточка формы */
+        .login-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 32px;
+            backdrop-filter: blur(8px);
+        }
+
+        .login-card__title {
+            font-family: var(--font-h);
+            font-size: 16px;
+            font-weight: 700;
+            color: #e8e8f0;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .form-group { margin-bottom: 18px; }
+        .form-label {
+            display: block;
+            font-size: 9.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(232,232,240,0.5);
+            margin-bottom: 7px;
+        }
+        .form-input {
+            width: 100%;
+            font-family: var(--font-b);
+            font-size: 14px;
+            padding: 11px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #e8e8f0;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .form-input::placeholder { color: rgba(232,232,240,0.25); }
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            font-family: var(--font-b);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s, box-shadow 0.15s;
+            text-transform: uppercase;
+        }
+        .btn-submit:hover {
+            background: #3a7ee0;
+            box-shadow: 0 4px 16px rgba(79,142,247,0.3);
+        }
+
+        .error-box {
+            background: rgba(229,57,53,0.12);
+            border-left: 3px solid #e53935;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            color: #ff8a80;
+            margin-bottom: 20px;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 10px;
+            color: rgba(232,232,240,0.25);
+            letter-spacing: 0.04em;
+        }
+    </style>
+</head>
+<body>
+<div class="login-wrap">
+
+    <div class="login-header">
+        <div class="login-header__logo">Д</div>
+        <div class="login-header__company">ОАО «Доломит»</div>
+        <div class="login-header__system">Система контроля исполнения поручений</div>
+    </div>
+
+    <div class="login-card">
+        <div class="login-card__title">Вход в систему</div>
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="id_username">Имя пользователя</label>
+                <input
+                    class="form-input"
+                    type="text"
+                    id="id_username"
+                    name="username"
+                    placeholder="Введите логин"
+                    autofocus
+                    autocomplete="username"
+                >
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="id_password">Пароль</label>
+                <input
+                    class="form-input"
+                    type="password"
+                    id="id_password"
+                    name="password"
+                    placeholder="Введите пароль"
+                    autocomplete="current-password"
+                >
+            </div>
+            <button type="submit" class="btn-submit">Войти</button>
+        </form>
+    </div>
+
+    <div class="login-footer">
+        Доступ разрешён только авторизованным сотрудникам
+    </div>
+
+</div>
+</body>
+</html>

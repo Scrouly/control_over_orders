@@ -1,0 +1,84 @@
+{% extends "reports/base_print.html" %}
+
+{% block title %}Поручения до {{ deadline_date|date:"d.m.Y" }}{% endblock %}
+
+{% block content %}
+    <div class="header-block">
+        <div>
+            <h1 class="company-title">ОАО «Доломит»</h1>
+            <div class="company-subtitle">Система контроля исполнения поручений</div>
+        </div>
+        <div class="doc-meta">
+            <div class="doc-meta__title doc-meta__title--large">Сводный лист контроля</div>
+            <div class="doc-meta__subtitle">срок исполнения до: {{ deadline_date|date:"d.m.Y" }}</div>
+            <div class="doc-meta__subtitle">сформировано: {{ report_date|date:"d.m.Y" }}</div>
+        </div>
+    </div>
+
+    {% regroup assignments by executor as executor_groups %}
+
+    {% for group in executor_groups %}
+
+        <div class="employee-card employee-card--compact"
+             {% if not forloop.first %}style="margin-top: 18px;"{% endif %}>
+            <div>
+                <div class="emp-label">Исполнитель</div>
+                <div class="emp-name">
+                    {{ group.grouper.last_name }}
+                    {{ group.grouper.first_name }}
+                    {{ group.grouper.middle_name }}
+                </div>
+            </div>
+            <div class="emp-info">
+                <div class="emp-name emp-name--small">{{ group.grouper.position.name|default:"—" }}</div>
+                <div class="emp-detail">{{ group.grouper.department.name|default:"—" }}</div>
+            </div>
+        </div>
+
+        <table class="task-table">
+            <thead>
+                <tr>
+                    <th style="width:20%">Тип / Номер</th>
+                    <th style="width:52%">Текст поручения</th>
+                    <th style="width:14%">Даты</th>
+                    <th style="width:14%">Визирующий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in group.list %}
+                <tr>
+                    <td>
+                        <span class="assignment-type-name" lang="ru">{{ task.assignment_type.name }}</span>
+                        <span class="doc-num">№&nbsp;{{ task.document_number }}</span>
+                    </td>
+                    <td>{{ task.description|linebreaksbr }}</td>
+                    <td>
+                        <div class="dates-label">Выдано</div>
+                        <div class="issue-date">{{ task.issue_date|date:"d.m.Y" }}</div>
+                        <div class="dates-gap">
+                            <div class="dates-label">Срок</div>
+                            <div class="deadline-box">{{ task.deadline|date:"d.m.Y" }}</div>
+                        </div>
+                    </td>
+                    <td style="vertical-align:top; padding:8px 7px; font-size:10px;">
+                        {% if task.approver %}
+                            <div style="font-weight:700;">
+                                {{ task.approver.last_name }}&nbsp;{{ task.approver.first_name|slice:":1" }}.{% if task.approver.middle_name %}{{ task.approver.middle_name|slice:":1" }}.{% endif %}
+                            </div>
+                        {% else %}
+                            <span style="color:#bbb; font-style:italic;">не назначен</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% endfor %}
+
+    {% if assignments %}
+    <div style="margin-top:10px; text-align:right; font-size:8px; color:#aaa; letter-spacing:0.05em;">
+        Всего поручений: {{ assignments|length }}
+    </div>
+    {% endif %}
+{% endblock %}
