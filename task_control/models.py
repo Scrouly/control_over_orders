@@ -131,11 +131,6 @@ class Assignment(models.Model):
         verbose_name="Контролирующий"
     )
 
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW, verbose_name="Статус")
-
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создано")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Обновлено")
-
     def __str__(self):
         return f"{self.assignment_type.name} №{self.document_number} от {self.issue_date}"
 
