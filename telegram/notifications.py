@@ -205,7 +205,7 @@ def process_new_assignments(queryset):
 #  2. ИЗМЕНЕНИЕ СРОКОВ
 # ════════════════════════════════════════════════════════
 
-def process_deadline_extensions(queryset):
+def process_deadline_change(queryset):
     sent_count = 0
     assignments = queryset.filter(is_notified_created=True)
     changed = [
@@ -259,6 +259,10 @@ def process_deadline_extensions(queryset):
             sent_count += len(tasks)
 
     return sent_count
+
+
+# Обратная совместимость со старым названием функции.
+process_deadline_extensions = process_deadline_change
 
 
 # ════════════════════════════════════════════════════════
