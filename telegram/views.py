@@ -1,3 +1,6 @@
-from django.shortcuts import render
+from django.http import JsonResponse
 
-# Create your views here.
+
+def health_view(request):
+    """Сервисный endpoint для проверки доступности telegram-приложения."""
+    return JsonResponse({'status': 'ok', 'service': 'telegram'})
