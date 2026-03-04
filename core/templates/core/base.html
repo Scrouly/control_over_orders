@@ -56,7 +56,8 @@
         /* Фокусные состояния для доступности */
         :focus-visible {
             outline: 2px solid var(--accent);
-            outline-offset: -2px;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.2);
         }
 
         /* ════════════════════════════════════════
@@ -109,12 +110,18 @@
             line-height: 1.2;
         }
         .logo__system {
-            font-size: 9.5px;
+            font-size: 10.5px;
             color: var(--text-muted);
             margin-top: 4px;
             letter-spacing: 0.05em;
             text-transform: uppercase;
         }
+
+        /* Компактный режим интерфейса */
+        body.density-compact { font-size: 13px; }
+        body.density-compact .topbar,
+        body.density-compact .content { font-size: 13px; }
+        body.density-compact .btn--sm { padding: 5px 10px; }
 
         /* ── Навигация ── */
         .sidebar__nav {
@@ -500,6 +507,11 @@
         .alert--success { background: #e8f5e9; border-color: #2e7d32; color: #1b5e20; }
         .alert--warning { background: #fff8e1; border-color: #f57c00; color: #6d3a00; }
         .alert--info    { background: #e3f2fd; border-color: #1565c0; color: #0d3670; }
+        .alert::before { margin-right: 8px; }
+        .alert--success::before { content: '✅'; }
+        .alert--error::before   { content: '⛔'; }
+        .alert--warning::before { content: '⚠️'; }
+        .alert--info::before    { content: 'ℹ️'; }
 
         /* Формы */
         .form-group { margin-bottom: 18px; }
@@ -740,6 +752,7 @@
             </div>
 
             <div class="topbar__actions">
+                <button type="button" class="btn btn--ghost btn--sm" id="density-toggle" title="Переключить плотность интерфейса">Плотность: обычная</button>
                 {% block topbar_actions %}{% endblock %}
                 <a href="{% url 'core:logout' %}" class="btn btn--ghost btn--sm">Выйти</a>
             </div>
@@ -783,6 +796,32 @@
             const btn = section.querySelector('.nav-parent');
             if (btn) btn.setAttribute('aria-expanded', 'true');
         }
+    });
+
+    // Плотность интерфейса (persist via localStorage)
+    (function() {
+        const btn = document.getElementById('density-toggle');
+        if (!btn) return;
+
+        const key = 'ui-density';
+        const setDensity = (mode) => {
+            document.body.classList.toggle('density-compact', mode === 'compact');
+            btn.textContent = mode === 'compact' ? 'Плотность: компактная' : 'Плотность: обычная';
+        };
+
+        const saved = localStorage.getItem(key) || 'normal';
+        setDensity(saved);
+
+        btn.addEventListener('click', () => {
+            const next = document.body.classList.contains('density-compact') ? 'normal' : 'compact';
+            localStorage.setItem(key, next);
+            setDensity(next);
+        });
+    })();
+
+    // Auto-dismiss info/success alerts
+    document.querySelectorAll('.alert--success, .alert--info').forEach((el) => {
+        setTimeout(() => el.remove(), 3500);
     });
 </script>
 

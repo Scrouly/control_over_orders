@@ -107,8 +107,10 @@ def deadline_filter_view(request):
             pdept   = request.GET.get('pdept', '').strip()
             pstatus = request.GET.get('pstatus', '').strip()
             if pexec:
-                qs = qs.filter(executor__last_name__icontains=pexec) | \
-                     qs.filter(executor__first_name__icontains=pexec)
+                qs = qs.filter(
+                    Q(executor__last_name__icontains=pexec) |
+                    Q(executor__first_name__icontains=pexec)
+                )
             if pdept.isdigit():
                 qs = qs.filter(executor__department_id=int(pdept))
             if pstatus:

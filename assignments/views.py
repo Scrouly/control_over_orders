@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
@@ -208,7 +208,7 @@ def assignment_detail(request, pk):
         return redirect('assignments:detail', pk=pk)
 
     delta = task.deadline - today
-    days_left = delta.days          # отрицательное если просрочено
+    days_left = delta.days          # значение < 0, если срок уже просрочен
     days_overdue = abs(delta.days)  # всегда положительное
 
     return render(request, 'assignments/detail.html', {
