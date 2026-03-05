@@ -74,7 +74,7 @@
         }
         .filter-group { display: flex; flex-direction: column; gap: 4px; }
         .filter-group label {
-            font-size: 9.5px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.09em;
@@ -183,7 +183,7 @@
             text-align: left;
             padding: 9px 10px;
             color: #fff;
-            font-size: 9.5px;
+            font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -203,6 +203,7 @@
             vertical-align: top;
         }
         .task-table tbody tr { transition: background 0.1s; }
+        .task-table tbody tr:nth-child(even) { background: #fcfcfb; }
         .task-table tbody tr:hover { background: #f7f5f0; }
         .task-table tbody tr.hidden-row { display: none; }
         .task-table tbody tr:last-child td { border-bottom: 2px solid var(--dark); }
@@ -222,7 +223,7 @@
             font-size: 13px;
         }
         .person-name { font-weight: 700; font-size: 12px; }
-        .person-dept { font-size: 10px; color: var(--muted); margin-top: 1px; }
+        .person-dept { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
         .deadline-val {
             font-family: var(--font-h);
@@ -234,7 +235,7 @@
             display: inline-block;
             margin-top: 3px;
             padding: 1px 7px;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             white-space: nowrap;
         }
@@ -245,12 +246,13 @@
 
         .status-badge {
             display: inline-block;
-            padding: 2px 8px;
-            font-size: 10px;
+            padding: 3px 10px;
+            font-size: 11px;
             font-weight: 700;
             letter-spacing: 0.04em;
             text-transform: uppercase;
             white-space: nowrap;
+            border-radius: 999px;
         }
         .s-NEW         { background: #e3f2fd; color: #1565c0; }
         .s-IN_PROGRESS { background: #e8f5e9; color: #2e7d32; }
@@ -423,7 +425,7 @@
                         <div class="days-badge
                             {% if task.deadline < today %}days-badge--overdue
                             {% elif task.deadline == today %}days-badge--today
-                            {% elif task.deadline <= today %}days-badge--soon
+                            {% elif task.deadline > today %}days-badge--soon
                             {% else %}days-badge--ok{% endif %}"
                             data-deadline="{{ task.deadline|date:'Y-m-d' }}">
                         </div>
@@ -499,14 +501,19 @@ function setEndOfNextMonth() {
     document.querySelectorAll('.days-badge[data-deadline]').forEach(el => {
         const d = new Date(el.dataset.deadline); d.setHours(0,0,0,0);
         const diff = Math.round((d - today) / 86400000);
+        el.classList.remove('days-badge--overdue', 'days-badge--today', 'days-badge--soon', 'days-badge--ok');
         if (diff < 0) {
             el.textContent = `просрочено ${Math.abs(diff)} дн.`;
+            el.classList.add('days-badge--overdue');
         } else if (diff === 0) {
             el.textContent = 'сегодня';
-        } else if (diff === 1) {
-            el.textContent = 'завтра';
+            el.classList.add('days-badge--today');
+        } else if (diff <= 3) {
+            el.textContent = diff === 1 ? 'завтра' : `${diff} дн.`;
+            el.classList.add('days-badge--soon');
         } else {
             el.textContent = `${diff} дн.`;
+            el.classList.add('days-badge--ok');
         }
     });
 })();

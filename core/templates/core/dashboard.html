@@ -17,7 +17,7 @@
     justify-content: space-between;
 }
 .dash-top__eyebrow {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -48,6 +48,8 @@
 @media (max-width: 640px)  { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
 
 .kpi {
+    display: block;
+    cursor: pointer;
     padding: 22px 24px 20px;
     border-right: 1px solid #e8e8e4;
     position: relative;
@@ -74,7 +76,7 @@
     margin-bottom: 14px;
 }
 .kpi__label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -102,7 +104,7 @@
     letter-spacing: -0.02em;
 }
 .kpi__sub {
-    font-size: 10px;
+    font-size: 11px;
     color: #bbb;
     margin-top: 6px;
 }
@@ -145,7 +147,7 @@
     color: #111;
 }
 .panel__sub {
-    font-size: 10px;
+    font-size: 11px;
     color: #bbb;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -173,7 +175,7 @@
     white-space: nowrap;
 }
 .urgent-row__type {
-    font-size: 9.5px;
+    font-size: 11px;
     color: #bbb;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -198,7 +200,7 @@
 .chip {
     display: inline-block;
     padding: 3px 9px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.03em;
     border-radius: 1px;
@@ -254,7 +256,7 @@
 .feed-row__body { flex: 1; min-width: 0; }
 .feed-row__num  { font-weight: 700; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .feed-row__meta { font-size: 10.5px; color: #aaa; margin-top: 2px; }
-.feed-row__date { font-size: 10px; color: #bbb; flex-shrink: 0; padding-top: 2px; }
+.feed-row__date { font-size: 11px; color: #bbb; flex-shrink: 0; padding-top: 2px; }
 
 /* ══ ПУСТО ══ */
 .empty-block {
@@ -284,10 +286,11 @@
     <div>
         <div class="dash-top__eyebrow">{{ today|date:"l, d E Y г." }}</div>
         <div class="dash-top__title">Дашборд</div>
+        <div class="dash-top__eyebrow" style="margin-top:6px;">Обновлено: {{ updated_at|date:"d.m.Y H:i" }}</div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
         <a href="{% url 'reports:deadline_filter' %}" class="btn btn--outline btn--sm">📅 По сроку</a>
-        <a href="#" class="btn btn--primary btn--sm">✏️ Новое поручение</a>
+        <a href="{% url 'assignments:create' %}" class="btn btn--primary btn--sm">✏️ Новое поручение</a>
 
         {# Кнопка проверки просрочки #}
         <form method="post" action="{% url 'core:check_overdue' %}" id="check-overdue-form" style="margin:0;">
@@ -307,59 +310,59 @@
     <!-- ══ KPI ══ -->
     <div class="kpi-strip a a2">
 
-        <div class="kpi" style="--kc:#4f8ef7; --ki:#eef3ff;">
+        <a class="kpi" href="{{ kpi_links.active }}" style="--kc:#4f8ef7; --ki:#eef3ff;" title="Открыть активные поручения">
             <div class="kpi__header">
                 <div class="kpi__label">Активных поручений</div>
                 <div class="kpi__icon-wrap">📋</div>
             </div>
             <div class="kpi__num" style="color:#111;">{{ kpi.active }}</div>
             <div class="kpi__sub">на контроле</div>
-        </div>
+        </a>
 
-        <div class="kpi" style="--kc:#e53935; --ki:#fdecea;">
+        <a class="kpi" href="{{ kpi_links.overdue }}" style="--kc:#e53935; --ki:#fdecea;" title="Открыть просроченные">
             <div class="kpi__header">
                 <div class="kpi__label">Просрочено</div>
                 <div class="kpi__icon-wrap">⚠️</div>
             </div>
             <div class="kpi__num" style="color:{% if kpi.overdue %}#c0392b{% else %}#111{% endif %};">{{ kpi.overdue }}</div>
             <div class="kpi__sub">{% if kpi.overdue %}требуют внимания{% else %}всё в порядке{% endif %}</div>
-        </div>
+        </a>
 
-        <div class="kpi" style="--kc:#f57c00; --ki:#fff4e5;">
+        <a class="kpi" href="{{ kpi_links.today }}" style="--kc:#f57c00; --ki:#fff4e5;" title="Открыть поручения со сроком до сегодня">
             <div class="kpi__header">
                 <div class="kpi__label">Срок сегодня</div>
                 <div class="kpi__icon-wrap">⏰</div>
             </div>
             <div class="kpi__num" style="color:{% if kpi.today %}#d35400{% else %}#111{% endif %};">{{ kpi.today }}</div>
             <div class="kpi__sub">до конца дня</div>
-        </div>
+        </a>
 
-        <div class="kpi" style="--kc:#1565c0; --ki:#e8f0fe;">
+        <a class="kpi" href="{{ kpi_links.week }}" style="--kc:#1565c0; --ki:#e8f0fe;" title="Открыть поручения на неделю">
             <div class="kpi__header">
                 <div class="kpi__label">На этой неделе</div>
                 <div class="kpi__icon-wrap">📆</div>
             </div>
             <div class="kpi__num" style="color:#111;">{{ kpi.week }}</div>
             <div class="kpi__sub">ближайшие 7 дней</div>
-        </div>
+        </a>
 
-        <div class="kpi" style="--kc:#2e7d32; --ki:#e8f5e9;">
+        <a class="kpi" href="{{ kpi_links.done_month }}" style="--kc:#2e7d32; --ki:#e8f5e9;" title="Открыть исполненные">
             <div class="kpi__header">
                 <div class="kpi__label">Исполнено в месяце</div>
                 <div class="kpi__icon-wrap">✅</div>
             </div>
             <div class="kpi__num" style="color:#111;">{{ kpi.done_month }}</div>
             <div class="kpi__sub">{{ today|date:"E Y" }}</div>
-        </div>
+        </a>
 
-        <div class="kpi" style="--kc:#00695c; --ki:#e0f2f1;">
+        <a class="kpi" href="{{ kpi_links.employees }}" style="--kc:#00695c; --ki:#e0f2f1;" title="Открыть справочник подразделений">
             <div class="kpi__header">
                 <div class="kpi__label">Сотрудников</div>
                 <div class="kpi__icon-wrap">👥</div>
             </div>
             <div class="kpi__num" style="color:#111;">{{ kpi.total_employees }}</div>
             <div class="kpi__sub">активных</div>
-        </div>
+        </a>
 
     </div>
 
@@ -388,6 +391,7 @@
                             {% if task.status == 'OVERDUE' %}<span class="chip chip--red">Просрочено</span>
                             {% elif task.deadline == today %}<span class="chip chip--orange">Сегодня</span>
                             {% else %}<span class="chip chip--green">{{ task.deadline|date:"d.m" }}</span>{% endif %}
+                            <a href="{% url 'assignments:detail' task.pk %}" class="btn btn--ghost btn--sm" style="margin-left:8px;">Открыть</a>
                         </div>
                     </div>
                     {% endfor %}

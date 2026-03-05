@@ -38,15 +38,18 @@
 }
 
 /* ── Поиск ── */
-.search-wrap { position: relative; flex:1; max-width:300px; min-width:160px; }
+.search-wrap { position: relative; flex:1; max-width:360px; min-width:180px; }
 .search-wrap__icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:13px; color:#bbb; pointer-events:none; }
 .search-input {
     width:100%; font-family:var(--font-b); font-size:13px;
-    padding:7px 10px 7px 32px;
+    padding:7px 56px 7px 32px;
     border:1px solid #e8e8e4; background:#fafaf8; color:#111; outline:none;
     transition:border-color .15s, box-shadow .15s;
 }
 .search-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(79,142,247,.1); background:#fff; }
+.search-clear { position:absolute; right:32px; top:50%; transform:translateY(-50%); border:0; background:transparent; color:#999; cursor:pointer; font-size:14px; display:none; }
+.search-clear:hover { color:#333; }
+.search-spinner { position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:11px; color:#888; display:none; }
 
 /* ── Фильтры ── */
 .filters-wrap {
@@ -220,6 +223,8 @@
                     <input type="text" name="q" id="search-input" class="search-input"
                            placeholder="Номер, текст, исполнитель…" value="{{ f_q }}"
                            aria-label="Поиск поручений">
+                    <button type="button" id="search-clear" class="search-clear" aria-label="Очистить поиск">✕</button>
+                    <span id="search-spinner" class="search-spinner">поиск…</span>
                 </div>
                 {% if has_filters %}
                 <a href="{% url 'assignments:list' %}" class="btn btn--ghost btn--sm" title="Сбросить все фильтры" aria-label="Сбросить фильтры">✕ Сбросить</a>
@@ -636,9 +641,29 @@ function printTask(id) { window.open(`/reports/print-selected/?ids=${id}`, '_bla
 
 // ── Авто-поиск ───────────────────────────────────────────
 let searchTimer;
-document.getElementById('search-input')?.addEventListener('input', () => {
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+const searchSpinner = document.getElementById('search-spinner');
+
+function updateSearchControls() {
+    const hasValue = !!searchInput?.value.trim();
+    if (searchClear) searchClear.style.display = hasValue ? '' : 'none';
+}
+
+searchInput?.addEventListener('input', () => {
+    updateSearchControls();
     clearTimeout(searchTimer);
+    if (searchSpinner) searchSpinner.style.display = '';
     searchTimer = setTimeout(() => document.getElementById('filter-form').submit(), 500);
 });
+
+searchClear?.addEventListener('click', () => {
+    if (!searchInput) return;
+    searchInput.value = '';
+    updateSearchControls();
+    document.getElementById('filter-form').submit();
+});
+
+updateSearchControls();
 </script>
 {% endblock %}
