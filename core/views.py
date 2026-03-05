@@ -71,7 +71,7 @@ def dashboard_view(request):
         Q(status='OVERDUE') | Q(deadline__lte=today + timedelta(days=1), status__in=['NEW', 'IN_PROGRESS'])
     ).select_related(
         'executor', 'executor__department', 'assignment_type', 'controller'
-    ).order_by('deadline')[:20]
+    ).order_by('deadline')
 
     # ── График 1: Динамика по месяцам (последние 6) ──────────
     months_labels = []

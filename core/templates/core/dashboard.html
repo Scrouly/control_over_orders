@@ -168,6 +168,8 @@
 }
 .urgent-row:last-child { border-bottom: none; }
 .urgent-row:hover { background: #fafaf8; }
+.urgent-row--link { text-decoration: none; color: inherit; display: grid; }
+.panel__body--bare-urgent { max-height: 560px; overflow-y: auto; }
 .urgent-row__num {
     font-family: var(--font-h);
     font-weight: 700;
@@ -372,12 +374,12 @@
         <div class="panel">
             <div class="panel__head">
                 <div class="panel__title">Требуют внимания</div>
-                <div class="panel__sub">просрочено · сегодня · завтра</div>
+                <div class="panel__sub">все найденные поручения · прокрутка</div>
             </div>
-            <div class="panel__body--bare">
+            <div class="panel__body--bare panel__body--bare-urgent">
                 {% if urgent %}
                     {% for task in urgent %}
-                    <div class="urgent-row">
+                    <a href="{% url 'assignments:detail' task.pk %}" class="urgent-row urgent-row--link" title="Открыть поручение">
                         <div>
                             <div class="urgent-row__type">{{ task.assignment_type.name }}</div>
                             <div class="urgent-row__num">№ {{ task.document_number }}</div>
@@ -391,9 +393,9 @@
                             {% if task.status == 'OVERDUE' %}<span class="chip chip--red">Просрочено</span>
                             {% elif task.deadline == today %}<span class="chip chip--orange">Сегодня</span>
                             {% else %}<span class="chip chip--green">{{ task.deadline|date:"d.m" }}</span>{% endif %}
-                            <a href="{% url 'assignments:detail' task.pk %}" class="btn btn--ghost btn--sm" style="margin-left:8px;">Открыть</a>
+                            
                         </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 {% else %}
                 <div class="empty-block">
