@@ -1,10 +1,14 @@
+import logging
 import requests
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
+from requests.exceptions import RequestException
 
 from task_control.models import Assignment
+
+logger = logging.getLogger(__name__)
 
 
 # ════════════════════════════════════════════════════════
@@ -25,7 +29,9 @@ HDIV  = "──────────"     # внутри блока пору�
 def send_telegram_message(chat_id, text):
     token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
     if not token or not chat_id:
+        logger.warning('Telegram message skipped: token/chat_id is missing.')
         return False
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     for part in _split_message(text):
         payload = {
@@ -34,14 +40,25 @@ def send_telegram_message(chat_id, text):
             'parse_mode': 'HTML',
             'disable_web_page_preview': True,
         }
-        try:
-            r = requests.post(url, json=payload, timeout=5)
-            if r.status_code != 200:
-                print(f"[TG] {r.status_code}: {r.text}")
+
+        for attempt in range(1, 4):
+            try:
+                response = requests.post(url, json=payload, timeout=5)
+                if response.status_code == 200:
+                    break
+
+                logger.warning(
+                    'Telegram API returned non-200 status (attempt %s): %s %s',
+                    attempt,
+                    response.status_code,
+                    response.text,
+                )
+            except RequestException as exc:
+                logger.warning('Telegram request failed (attempt %s): %s', attempt, exc)
+
+            if attempt == 3:
                 return False
-        except Exception as e:
-            print(f"[TG] Ошибка: {e}")
-            return False
+
     return True
 
 
@@ -205,7 +222,7 @@ def process_new_assignments(queryset):
 #  2. ИЗМЕНЕНИЕ СРОКОВ
 # ════════════════════════════════════════════════════════
 
-def process_deadline_extensions(queryset):
+def process_deadline_change(queryset):
     sent_count = 0
     assignments = queryset.filter(is_notified_created=True)
     changed = [
@@ -259,6 +276,10 @@ def process_deadline_extensions(queryset):
             sent_count += len(tasks)
 
     return sent_count
+
+
+# Обратная совместимость со старым названием функции.
+process_deadline_extensions = process_deadline_change
 
 
 # ════════════════════════════════════════════════════════

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.db.models import Count, Q
+from django.urls import reverse
 from datetime import timedelta, date
 import json
 
@@ -70,7 +71,7 @@ def dashboard_view(request):
         Q(status='OVERDUE') | Q(deadline__lte=today + timedelta(days=1), status__in=['NEW', 'IN_PROGRESS'])
     ).select_related(
         'executor', 'executor__department', 'assignment_type', 'controller'
-    ).order_by('deadline')[:20]
+    ).order_by('deadline')
 
     # ── График 1: Динамика по месяцам (последние 6) ──────────
     months_labels = []
@@ -152,11 +153,22 @@ def dashboard_view(request):
         'executor', 'assignment_type'
     ).order_by('-created_at')[:8]
 
+    kpi_links = {
+        'active': f"{reverse('assignments:list')}?status=active",
+        'overdue': f"{reverse('assignments:list')}?status=OVERDUE",
+        'today': f"{reverse('assignments:list')}?status=active&date_to={today.isoformat()}",
+        'week': f"{reverse('assignments:list')}?status=active&date_to={week_end.isoformat()}",
+        'done_month': f"{reverse('assignments:list')}?status=DONE",
+        'employees': reverse('references:departments'),
+    }
+
     return render(request, 'core/dashboard.html', {
         'kpi':               kpi,
+        'kpi_links':         kpi_links,
         'urgent':            urgent,
         'recent':            recent,
         'today':             today,
+        'updated_at':        timezone.now(),
         'chart_monthly':     json.dumps(chart_monthly,     ensure_ascii=False),
         'chart_executors':   json.dumps(chart_executors,   ensure_ascii=False),
         'chart_departments': json.dumps(chart_departments, ensure_ascii=False),
