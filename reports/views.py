@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
-from django.db.models import Count
+from django.db.models import Count, Q
 from task_control.models import Employee, Assignment
 
 
